@@ -5,8 +5,8 @@
 
 import { useState, useEffect, Suspense, useRef } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Canvas } from '@react-three/fiber';
-import { OrbitControls, PerspectiveCamera, Environment, ContactShadows } from '@react-three/drei';
+import { Canvas, useFrame } from '@react-three/fiber';
+import { OrbitControls, PerspectiveCamera, Environment, ContactShadows, useGLTF } from '@react-three/drei';
 import * as THREE from 'three';
 import { 
   Heart, 
@@ -19,96 +19,83 @@ import {
   RefreshCcw,
   CheckCircle2,
   XCircle,
-  Rotate3d
+  Rotate3d,
+  Volume2,
+  LayoutGrid,
+  Zap,
+  ShieldCheck,
+  Building2,
+  Waves,
+  AlertTriangle,
+  Table,
+  DoorOpen,
+  EyeOff,
+  Home,
+  Grab,
+  MousePointer2,
+  Lightbulb as LightbulbIcon
 } from 'lucide-react';
+import {
+  DndContext, 
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  DragOverlay,
+} from '@dnd-kit/core';
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  verticalListSortingStrategy,
+  useSortable,
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 
 // --- 3D Components ---
 
-function OmoHadaModel() {
+function OmoHadaModel({ isShaking, simulationResult }: { isShaking?: boolean, simulationResult?: 'steady' | 'collapsed' | null }) {
   const meshRef = useRef<THREE.Group>(null);
+  const { scene } = useGLTF('/Copilot3D-6a753cf7-a08a-4c62-92e0-84fac9ae7946.glb');
+
+  useFrame((state) => {
+    if (!meshRef.current) return;
+
+    if (isShaking) {
+      // Intense vibration
+      meshRef.current.position.x = Math.sin(state.clock.elapsedTime * 50) * 0.15;
+      meshRef.current.position.y = Math.cos(state.clock.elapsedTime * 60) * 0.05;
+      meshRef.current.position.z = Math.sin(state.clock.elapsedTime * 40) * 0.1;
+      meshRef.current.rotation.x = Math.sin(state.clock.elapsedTime * 30) * 0.02;
+    } else if (simulationResult === 'collapsed') {
+      // Tilt and sink for failure
+      meshRef.current.rotation.z = THREE.MathUtils.lerp(meshRef.current.rotation.z, -0.3, 0.05);
+      meshRef.current.position.y = THREE.MathUtils.lerp(meshRef.current.position.y, -1.2, 0.05);
+      meshRef.current.position.x = THREE.MathUtils.lerp(meshRef.current.position.x, -0.5, 0.05);
+    } else {
+      // Return to normal
+      meshRef.current.position.x = THREE.MathUtils.lerp(meshRef.current.position.x, 0, 0.1);
+      meshRef.current.position.y = THREE.MathUtils.lerp(meshRef.current.position.y, 0, 0.1);
+      meshRef.current.position.z = THREE.MathUtils.lerp(meshRef.current.position.z, 0, 0.1);
+      meshRef.current.rotation.z = THREE.MathUtils.lerp(meshRef.current.rotation.z, 0, 0.1);
+      meshRef.current.rotation.x = THREE.MathUtils.lerp(meshRef.current.rotation.x, 0, 0.1);
+    }
+  });
 
   return (
-    <group ref={meshRef}>
-      {/* Foundation Stones (Umpak) */}
-      <mesh position={[-1.5, -1.8, -1]}>
-        <boxGeometry args={[0.8, 0.4, 0.8]} />
-        <meshStandardMaterial color="#8D6E63" />
-      </mesh>
-      <mesh position={[1.5, -1.8, -1]}>
-        <boxGeometry args={[0.8, 0.4, 0.8]} />
-        <meshStandardMaterial color="#8D6E63" />
-      </mesh>
-      <mesh position={[-1.5, -1.8, 1]}>
-        <boxGeometry args={[0.8, 0.4, 0.8]} />
-        <meshStandardMaterial color="#8D6E63" />
-      </mesh>
-      <mesh position={[1.5, -1.8, 1]}>
-        <boxGeometry args={[0.8, 0.4, 0.8]} />
-        <meshStandardMaterial color="#8D6E63" />
-      </mesh>
-
-      {/* Main Pillars (Ehomo) */}
-      <mesh position={[-1.5, -0.8, -1]}>
-        <cylinderGeometry args={[0.15, 0.15, 2]} />
-        <meshStandardMaterial color="#5D4037" />
-      </mesh>
-      <mesh position={[1.5, -0.8, -1]}>
-        <cylinderGeometry args={[0.15, 0.15, 2]} />
-        <meshStandardMaterial color="#5D4037" />
-      </mesh>
-      <mesh position={[-1.5, -0.8, 1]}>
-        <cylinderGeometry args={[0.15, 0.15, 2]} />
-        <meshStandardMaterial color="#5D4037" />
-      </mesh>
-      <mesh position={[1.5, -0.8, 1]}>
-        <cylinderGeometry args={[0.15, 0.15, 2]} />
-        <meshStandardMaterial color="#5D4037" />
-      </mesh>
-
-      {/* Diagonal Supports (Diwa) */}
-      <mesh position={[0, -0.8, -1]} rotation={[0, 0, Math.PI / 4]}>
-        <boxGeometry args={[2.5, 0.1, 0.1]} />
-        <meshStandardMaterial color="#4E342E" />
-      </mesh>
-      <mesh position={[0, -0.8, 1]} rotation={[0, 0, -Math.PI / 4]}>
-        <boxGeometry args={[2.5, 0.1, 0.1]} />
-        <meshStandardMaterial color="#4E342E" />
-      </mesh>
-
-      {/* House Body (Floor) */}
-      <mesh position={[0, 0.3, 0]}>
-        <boxGeometry args={[4, 0.2, 3]} />
-        <meshStandardMaterial color="#795548" />
-      </mesh>
-      
-      {/* Walls */}
-      <mesh position={[0, 1.3, -1.4]}>
-        <boxGeometry args={[3.8, 2, 0.1]} />
-        <meshStandardMaterial color="#8D6E63" />
-      </mesh>
-      <mesh position={[0, 1.3, 1.4]}>
-        <boxGeometry args={[3.8, 2, 0.1]} />
-        <meshStandardMaterial color="#8D6E63" />
-      </mesh>
-      <mesh position={[-1.9, 1.3, 0]} rotation={[0, Math.PI / 2, 0]}>
-        <boxGeometry args={[2.8, 2, 0.1]} />
-        <meshStandardMaterial color="#8D6E63" />
-      </mesh>
-      <mesh position={[1.9, 1.3, 0]} rotation={[0, Math.PI / 2, 0]}>
-        <boxGeometry args={[2.8, 2, 0.1]} />
-        <meshStandardMaterial color="#8D6E63" />
-      </mesh>
-
-      {/* Iconic High Roof */}
-      <mesh position={[0, 3.3, 0]} rotation={[0, Math.PI / 4, 0]}>
-        <coneGeometry args={[3, 3, 4]} />
-        <meshStandardMaterial color="#3E2723" />
-      </mesh>
-    </group>
+    <primitive 
+      ref={meshRef} 
+      object={scene} 
+      scale={5.5} 
+      position={[0, -2.8, 0]} 
+    />
   );
 }
 
-function House3DViewer() {
+useGLTF.preload('/Copilot3D-6a753cf7-a08a-4c62-92e0-84fac9ae7946.glb');
+
+function House3DViewer({ isShaking, simulationResult }: { isShaking?: boolean, simulationResult?: 'steady' | 'collapsed' | null }) {
   return (
     <div className="w-full h-[320px] bg-stone-100 rounded-3xl overflow-hidden relative border-2 border-stone-200 shadow-inner">
       <div className="absolute top-4 left-4 z-10 flex items-center gap-2 bg-white/90 backdrop-blur-sm px-3 py-1.5 rounded-full border border-stone-200 text-stone-500 shadow-sm">
@@ -117,22 +104,30 @@ function House3DViewer() {
       </div>
       
       <Canvas shadows dpr={[1, 2]}>
-        <PerspectiveCamera makeDefault position={[8, 5, 10]} fov={35} />
-        <ambientLight intensity={0.7} />
-        <spotLight position={[10, 10, 10]} angle={0.15} penumbra={1} intensity={1.5} castShadow />
-        <pointLight position={[-10, -10, -10]} intensity={0.5} />
+        <PerspectiveCamera makeDefault position={[4, 2, 4]} fov={38} />
+        <ambientLight intensity={1.5} />
+        <hemisphereLight intensity={1.5} groundColor="#4a4a4a" />
+        <directionalLight position={[10, 15, 10]} intensity={3.5} castShadow />
+        <spotLight position={[20, 20, 20]} angle={0.3} penumbra={1} intensity={4.0} castShadow />
+        <pointLight position={[-15, 10, -15]} intensity={2.0} />
+        <pointLight position={[0, 5, 5]} intensity={2.0} />
+        <pointLight position={[5, -5, 5]} intensity={1.0} />
         
         <Suspense fallback={null}>
-          <OmoHadaModel />
-          <ContactShadows position={[0, -2, 0]} opacity={0.4} scale={15} blur={2.5} far={4} />
+          <OmoHadaModel isShaking={isShaking} simulationResult={simulationResult} />
+          <ContactShadows position={[0, -2, 0]} opacity={0.6} scale={15} blur={2.5} far={4} />
           <Environment preset="city" />
         </Suspense>
 
         <OrbitControls 
           enablePan={false} 
-          minDistance={8} 
-          maxDistance={15}
+          enableZoom={true}
+          enableDamping={true}
+          dampingFactor={0.05}
+          minDistance={1.5} 
+          maxDistance={12}
           autoRotate={false}
+          autoRotateSpeed={0.8}
         />
       </Canvas>
     </div>
@@ -141,13 +136,14 @@ function House3DViewer() {
 
 // --- Main Application ---
 
-type Page = 'mindful' | 'meaningful' | 'joyful' | 'mitigasi';
+type Page = 'dashboard' | 'mindful' | 'meaningful' | 'joyful' | 'mitigasi';
 
 export default function App() {
-  const [currentPage, setCurrentPage] = useState<Page>('mindful');
+  const [currentPage, setCurrentPage] = useState<Page>('dashboard');
   const [isShaking, setIsShaking] = useState(false);
 
   const navItems = [
+    { id: 'dashboard', label: 'Beranda', icon: LayoutGrid },
     { id: 'mindful', label: 'Mindful', icon: Heart },
     { id: 'meaningful', label: 'Meaningful', icon: Lightbulb },
     { id: 'joyful', label: 'Joyful', icon: Gamepad2 },
@@ -159,6 +155,7 @@ export default function App() {
       {/* Main Content Area */}
       <main className="flex-1 overflow-y-auto pb-20 relative">
         <AnimatePresence mode="wait">
+          {currentPage === 'dashboard' && <DashboardPage key="dashboard" onSelect={(p) => setCurrentPage(p)} />}
           {currentPage === 'mindful' && <MindfulPage key="mindful" onNext={() => setCurrentPage('meaningful')} />}
           {currentPage === 'meaningful' && <MeaningfulPage key="meaningful" />}
           {currentPage === 'joyful' && <JoyfulPage key="joyful" isShaking={isShaking} setIsShaking={setIsShaking} />}
@@ -167,7 +164,7 @@ export default function App() {
       </main>
 
       {/* Bottom Navigation */}
-      <nav className="bg-white border-t border-stone-200 h-16 flex items-center justify-around fixed bottom-0 w-full max-w-md">
+      <nav className="bg-white border-t border-stone-200 h-16 flex items-center justify-around fixed bottom-0 w-full max-w-md z-50">
         {navItems.map((item) => {
           const Icon = item.icon;
           const isActive = currentPage === item.id;
@@ -192,6 +189,67 @@ export default function App() {
         })}
       </nav>
     </div>
+  );
+}
+
+function DashboardPage({ onSelect }: { onSelect: (p: Page) => void }) {
+  const modules = [
+    { id: 'mindful', title: 'Mindful', subtitle: 'Sejarah & Tragedi', icon: Heart, color: 'bg-red-500', des: 'Pahami luka masa lalu & kearifan lokal.' },
+    { id: 'meaningful', title: 'Meaningful', subtitle: 'Anatomi Etnosains', icon: Lightbulb, color: 'bg-yellow-500', des: 'Rahasia struktur tahan gempa Omo Hada.' },
+    { id: 'joyful', title: 'Joyful', subtitle: 'Simulasi Gempa', icon: Gamepad2, color: 'bg-blue-500', des: 'Uji ketahanan desainmu secara interaktif.' },
+    { id: 'mitigasi', title: 'Mitigasi', subtitle: 'Aksi Penyelamatan', icon: ShieldAlert, color: 'bg-green-600', des: 'Pelajari langkah siaga saat darurat.' }
+  ];
+
+  return (
+    <motion.div 
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      className="p-8 space-y-8"
+    >
+      <header className="space-y-2 mt-4">
+        <h1 className="text-4xl font-black text-wood-dark tracking-tighter leading-none">
+          Halo, <br/>
+          <span className="text-brick-red">Petualang!</span>
+        </h1>
+        <p className="text-stone-500 text-sm font-bold leading-tight">
+          Mari belajar ketangguhan dari leluhur Nias melalui 4 fase penting.
+        </p>
+      </header>
+
+      <div className="grid gap-4">
+        {modules.map((m, idx) => {
+          const Icon = m.icon;
+          return (
+            <motion.button
+              key={m.id}
+              initial={{ x: -20, opacity: 0 }}
+              animate={{ x: 0, opacity: 1 }}
+              transition={{ delay: idx * 0.1 }}
+              onClick={() => onSelect(m.id as Page)}
+              className="group flex flex-col items-start p-6 bg-white rounded-[32px] shadow-sm hover:shadow-xl transition-all border border-stone-100 text-left relative overflow-hidden"
+            >
+              <div className={`${m.color} p-3 rounded-2xl text-white mb-4 group-hover:scale-110 transition-transform`}>
+                <Icon size={24} />
+              </div>
+              <div className="space-y-1">
+                <span className="text-[10px] uppercase font-black tracking-widest text-stone-400">{m.subtitle}</span>
+                <h3 className="text-xl font-black text-stone-800">{m.title}</h3>
+                <p className="text-xs text-stone-500 font-bold leading-relaxed">{m.des}</p>
+              </div>
+              <div className="absolute top-6 right-6 text-stone-200 group-hover:text-brick-red/20 transition-colors">
+                <ChevronRight size={32} />
+              </div>
+            </motion.button>
+          );
+        })}
+      </div>
+
+      <div className="bg-wood-dark/5 p-6 rounded-[32px] border-2 border-wood-dark/10 border-dashed text-center">
+        <p className="text-xs font-bold text-wood-dark/60">
+          "Kearifan lokal adalah tameng kita di masa depan."
+        </p>
+      </div>
+    </motion.div>
   );
 }
 
@@ -250,21 +308,20 @@ function MindfulPage({ onNext }: { onNext: () => void }) {
 }
 
 function MeaningfulPage() {
-  const [activeTab, setActiveTab] = useState<'anatomy' | 'science'>('anatomy');
-  const [activeModal, setActiveModal] = useState<string | null>(null);
+  const [activeModal, setActiveModal] = useState<'ehomo' | 'diwa' | 'paku' | null>('ehomo');
 
   const anatomyDetails = {
     ehomo: {
-      title: "Titik 1: Ehomo (Pondasi Batu)",
-      desc: "Tiang kayu tidak ditanam di tanah, tapi diletakkan di atas batu datar. Ini membuat rumah bisa bergeser saat gempa tanpa patah."
+      title: "Ehomo (Pondasi Batu)",
+      desc: "Tiang kayu tidak ditanam di tanah, tapi diletakkan di atas batu datar."
     },
     diwa: {
-      title: "Titik 2: Diwa (Tiang Menyilang)",
-      desc: "Kayu dipasang menyilang membentuk huruf 'X'. Struktur ini sangat stabil namun fleksibel mengikuti guncangan."
+      title: "Diwa (Tiang Menyilang)",
+      desc: "Kayu dipasang menyilang membentuk huruf 'X'."
     },
     paku: {
-      title: "Titik 3: Tanpa Paku",
-      desc: "Seluruh sambungan menggunakan sistem pasak kayu (lubang dan pengunci), bukan paku besi. Ini mencegah retakan pada sambungan."
+      title: "Tanpa Paku",
+      desc: "Seluruh sambungan menggunakan sistem pasak kayu (lubang dan pengunci)."
     }
   };
 
@@ -275,128 +332,173 @@ function MeaningfulPage() {
   };
 
   return (
-    <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-      className="p-6"
-    >
-      <div className="flex bg-stone-100 p-1 rounded-xl mb-6">
-        <button 
-          onClick={() => setActiveTab('anatomy')}
-          className={`flex-1 py-2 text-sm font-bold rounded-lg transition-all ${activeTab === 'anatomy' ? 'bg-white shadow-sm text-wood-dark' : 'text-stone-400'}`}
-        >
-          Anatomi
-        </button>
-        <button 
-          onClick={() => setActiveTab('science')}
-          className={`flex-1 py-2 text-sm font-bold rounded-lg transition-all ${activeTab === 'science' ? 'bg-white shadow-sm text-wood-dark' : 'text-stone-400'}`}
-        >
-          Sains
-        </button>
-      </div>
+    <div className="flex flex-col h-full bg-[#F5E6D3] min-h-[600px] font-sans">
+      <header className="p-6 text-center relative">
+        <h2 className="text-xl font-black text-stone-800 leading-tight">
+          Fase MEANINGFUL - Bagian A<br/>
+          <span className="text-lg font-bold block">(Anatomi Etnosains)</span>
+        </h2>
+        <div className="absolute top-6 right-6">
+          <button onClick={playKnock} className="bg-white p-3 rounded-full shadow-lg text-stone-600 active:scale-95 transition-transform border border-stone-100">
+            <Volume2 size={24} />
+          </button>
+        </div>
+      </header>
 
-      {activeTab === 'anatomy' ? (
-        <div className="space-y-6">
-          <div className="relative">
+      <div className="flex-1 relative flex flex-col items-center pb-8 px-6">
+        <div className="w-full max-w-md flex flex-col gap-6">
+          {/* Main 3D Viewer Area - Cleaned up */}
+          <div className="relative w-full aspect-square bg-stone-50 rounded-[40px] overflow-hidden border-2 border-stone-200 shadow-inner group">
             <House3DViewer />
-            
-            {/* Hotspots Overlay */}
-            <div className="absolute inset-0 pointer-events-none">
-              <button 
-                onClick={() => { playKnock(); setActiveModal('ehomo'); }}
-                className="absolute bottom-1/4 left-1/3 pointer-events-auto p-2 group"
-              >
-                <div className="w-8 h-8 bg-brick-red text-white rounded-full flex items-center justify-center animate-pulse border-4 border-white/30 shadow-lg font-bold text-xs ring-4 ring-brick-red/20">1</div>
-              </button>
-              
-              <button 
-                onClick={() => { playKnock(); setActiveModal('diwa'); }}
-                className="absolute top-1/2 right-1/2 translate-x-4 pointer-events-auto p-2 group"
-              >
-                <div className="w-8 h-8 bg-brick-red text-white rounded-full flex items-center justify-center animate-pulse border-4 border-white/30 shadow-lg font-bold text-xs ring-4 ring-brick-red/20" style={{ animationDelay: '0.5s' }}>2</div>
-              </button>
-              
-              <button 
-                onClick={() => { playKnock(); setActiveModal('paku'); }}
-                className="absolute top-1/3 right-1/3 pointer-events-auto p-2 group"
-              >
-                <div className="w-8 h-8 bg-brick-red text-white rounded-full flex items-center justify-center animate-pulse border-4 border-white/30 shadow-lg font-bold text-xs ring-4 ring-brick-red/20" style={{ animationDelay: '1s' }}>3</div>
-              </button>
+            <div className="absolute top-4 left-1/2 -translate-x-1/2 bg-white/80 backdrop-blur-sm px-4 py-1.5 rounded-full border border-stone-200 text-[10px] font-black text-stone-500 uppercase tracking-widest pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity">
+              Slide untuk putar • Zoom untuk detail
+            </div>
+            {/* Minimal Indicators */}
+            <div className="absolute inset-x-2 top-1/2 -translate-y-1/2 flex justify-between pointer-events-none text-stone-300/50">
+              <RefreshCcw size={24} className="rotate-90" />
+              <RefreshCcw size={24} className="-rotate-90 scale-x-[-1]" />
             </div>
           </div>
 
-          <div className="bg-wood-light/20 p-5 rounded-3xl border-2 border-wood-light/50 border-dashed">
-            <p className="text-xs text-wood-dark leading-relaxed font-bold flex items-center gap-2">
-              <Info size={14} />
-              Klik angka di atas untuk pelajari rahasia konstruksinya!
-            </p>
-          </div>
-        </div>
-      ) : (
-        <div className="space-y-6">
-          <div className="bg-white p-6 rounded-2xl border border-stone-200 shadow-sm space-y-4">
-            <div className="flex items-center gap-3 text-brick-red">
-              <RefreshCcw size={24} />
-              <h3 className="font-bold text-lg">Konsep Inersia</h3>
-            </div>
-            <p className="text-sm text-stone-600 leading-relaxed">
-              Inersia adalah sifat benda untuk mempertahankan keadaannya. Saat tanah bergerak mendadak, beban berat rumah Omo Hada cenderung tetap diam, membuat getaran tanah tidak langsung merambat naik ke seluruh bangunan.
-            </p>
+          {/* External Point Selector Buttons */}
+          <div className="grid grid-cols-3 gap-3">
+            {[
+              { id: 'ehomo', label: 'Ehomo', point: 'Poin 1' },
+              { id: 'diwa', label: 'Diwa', point: 'Poin 2' },
+              { id: 'paku', label: 'Tanpa Paku', point: 'Poin 3' }
+            ].map((item) => (
+              <button
+                key={item.id}
+                onClick={() => { playKnock(); setActiveModal(item.id as any); }}
+                className={`py-4 px-2 rounded-2xl flex flex-col items-center transition-all border-2 ${
+                  activeModal === item.id 
+                    ? 'bg-wood-dark border-wood-dark text-white shadow-lg scale-105' 
+                    : 'bg-white border-stone-200 text-stone-400 hover:border-stone-300 active:scale-95'
+                }`}
+              >
+                <span className="text-[10px] font-black uppercase mb-1 opacity-60 tracking-wider font-mono">{item.point}</span>
+                <span className="text-xs font-black tracking-tight leading-tight text-center">{item.label}</span>
+              </button>
+            ))}
           </div>
 
-          <div className="bg-white p-6 rounded-2xl border border-stone-200 shadow-sm space-y-4">
-             <div className="flex items-center gap-3 text-brick-red">
-              <motion.div animate={{ scale: [1, 1.1, 1] }} transition={{ repeat: Infinity, duration: 2 }}>
-                <CheckCircle2 size={24} />
+          {/* Explanation Bubble */}
+          <AnimatePresence mode="wait">
+            {activeModal && (
+              <motion.div 
+                key={activeModal}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: 10 }}
+                className="bg-white rounded-[40px] p-8 shadow-2xl relative"
+              >
+                {/* Bubble Tip */}
+                <div className="absolute -top-4 left-1/2 -translate-x-1/2 w-0 h-0 border-l-[20px] border-l-transparent border-r-[20px] border-r-transparent border-b-[20px] border-b-white" />
+                
+                <div className="flex justify-between gap-4">
+                  <div className="space-y-4 w-full">
+                    <div className="flex items-center gap-3">
+                      <div className="w-3 h-3 rounded-full bg-brick-red animate-pulse" />
+                      <h3 className="text-2xl font-black text-stone-800 tracking-tight leading-none">
+                        {anatomyDetails[activeModal].title}
+                      </h3>
+                    </div>
+                    <div className="space-y-1">
+                      <p className="text-stone-400 font-black text-[10px] uppercase tracking-[0.2em]">Keterangan Struktur:</p>
+                      <p className="text-stone-700 text-lg leading-snug font-bold">
+                        {anatomyDetails[activeModal].desc}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="bg-stone-100 p-3 rounded-full text-stone-400 shrink-0 self-start lg:hidden">
+                    <Volume2 size={24} />
+                  </div>
+                </div>
               </motion.div>
-              <h3 className="font-bold text-lg">Konsep Elastisitas</h3>
-            </div>
-            <p className="text-sm text-stone-600 leading-relaxed">
-              Bahan kayu memiliki elastisitas yang lebih baik dibanding beton. Kayu bisa melengkung dan kembali ke bentuk semula tanpa pecah, menyerap energi gempa seperti pegas raksasa.
-            </p>
-          </div>
+            )}
+          </AnimatePresence>
         </div>
-      )}
-
-      {/* Modal */}
-      <AnimatePresence>
-        {activeModal && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-6 bg-black/40 backdrop-blur-sm">
-            <motion.div 
-              initial={{ scale: 0.9, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.9, opacity: 0 }}
-              className="bg-white rounded-3xl p-6 shadow-2xl max-w-xs w-full space-y-4 border-2 border-wood-dark"
-            >
-              <h3 className="text-xl font-bold text-wood-dark border-b pb-2">
-                {anatomyDetails[activeModal as keyof typeof anatomyDetails].title}
-              </h3>
-              <p className="text-sm text-stone-600 leading-relaxed">
-                {anatomyDetails[activeModal as keyof typeof anatomyDetails].desc}
-              </p>
-              <button 
-                onClick={() => setActiveModal(null)}
-                className="w-full bg-wood-dark text-white font-bold py-3 rounded-xl active:scale-95 transition-transform"
-              >
-                Mengerti!
-              </button>
-            </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
-    </motion.div>
+      </div>
+    </div>
   );
 }
+
+function HouseSVGViewer({ isShaking, simulationResult }: { isShaking?: boolean, simulationResult?: 'steady' | 'collapsed' | null }) {
+  return (
+    <div className="w-full h-64 relative flex items-center justify-center overflow-hidden bg-stone-50/50 rounded-3xl border-2 border-dashed border-stone-200 shadow-inner">
+      <motion.svg 
+        viewBox="0 0 400 300" 
+        className="w-full h-full drop-shadow-2xl"
+        initial={false}
+        animate={isShaking ? { 
+          x: [0, -8, 8, -8, 0],
+          y: [0, -2, 2, -2, 0],
+          rotate: [0, -1, 1, -1, 0]
+        } : (simulationResult === 'collapsed' ? {
+          rotate: -15,
+          y: 40,
+          opacity: 0.8
+        } : { rotate: 0, y: 0, opacity: 1 })}
+        transition={isShaking ? { repeat: Infinity, duration: 0.1 } : { type: 'spring', damping: 10 }}
+      >
+        {/* Ground */}
+        <line x1="50" y1="260" x2="350" y2="260" stroke="#78716c" strokeWidth="4" strokeLinecap="round" />
+        
+        {/* Foundation Pillars */}
+        <g stroke="#57534e" strokeWidth="8" strokeLinecap="round">
+          <line x1="120" y1="260" x2="140" y2="200" />
+          <line x1="280" y1="260" x2="260" y2="200" />
+          <line x1="200" y1="260" x2="200" y2="200" />
+          
+          {/* Diwa (X-Pillars) */}
+          <line x1="140" y1="260" x2="260" y2="200" opacity="0.4" />
+          <line x1="260" y1="260" x2="140" y2="200" opacity="0.4" />
+        </g>
+
+        {/* Main Structure Base */}
+        <motion.rect 
+          x="100" y="140" width="200" height="60" rx="8" 
+          fill="#a8a29e" 
+          stroke="#57534e" strokeWidth="4"
+        />
+
+        {/* Roof */}
+        <motion.path 
+          d="M80 150 L200 40 L320 150 Z" 
+          fill="#7c2d12" 
+          stroke="#451a03" strokeWidth="4" strokeLinejoin="round" 
+        />
+        
+        {/* Windows */}
+        <rect x="130" y="160" width="30" height="30" rx="4" fill="#e7e5e4" stroke="#57534e" strokeWidth="2" />
+        <rect x="240" y="160" width="30" height="30" rx="4" fill="#e7e5e4" stroke="#57534e" strokeWidth="2" />
+
+        {/* Dynamic Cracks or Effects */}
+        {simulationResult === 'collapsed' && !isShaking && (
+          <g stroke="#ef4444" strokeWidth="3" opacity="0.6">
+            <path d="M150 140 L160 170 L145 190" fill="none" />
+            <path d="M250 145 L240 175 L255 200" fill="none" />
+          </g>
+        )}
+      </motion.svg>
+
+      {/* Decorative environment elements */}
+      {!isShaking && (
+        <div className="absolute bottom-4 left-4 bg-white/80 backdrop-blur-sm px-3 py-1 rounded-full border border-stone-200 text-[10px] font-black text-stone-400 uppercase tracking-widest">
+          Simulasi Visual Dasar
+        </div>
+      )}
+    </div>
+  );
+}
+
 function JoyfulPage({ isShaking, setIsShaking }: { isShaking: boolean, setIsShaking: (v: boolean) => void }) {
   const [pondasi, setPondasi] = useState<string>('');
   const [sambungan, setSambungan] = useState<string>('');
   const [simulationResult, setSimulationResult] = useState<'steady' | 'collapsed' | null>(null);
 
   const handleSimulate = () => {
-    if (!pondasi || !sambungan) {
-      return;
-    }
+    if (!pondasi || !sambungan) return;
 
     // Sound effects
     const earthquakeSound = new Audio('https://assets.mixkit.co/active_storage/sfx/2567/2567-preview.mp3');
@@ -404,7 +506,7 @@ function JoyfulPage({ isShaking, setIsShaking }: { isShaking: boolean, setIsShak
     const failureSound = new Audio('https://assets.mixkit.co/active_storage/sfx/2571/2571-preview.mp3');
     
     earthquakeSound.volume = 0.5;
-    earthquakeSound.play().catch(() => {}); // Catch browser auto-play restrictions
+    earthquakeSound.play().catch(() => {});
 
     setSimulationResult(null);
     setIsShaking(true);
@@ -420,155 +522,129 @@ function JoyfulPage({ isShaking, setIsShaking }: { isShaking: boolean, setIsShak
         setSimulationResult('collapsed');
         failureSound.play().catch(() => {});
       }
-    }, 2000);
+    }, 3000);
   };
 
-  // Reset result when changing selection
-  useEffect(() => {
-    setSimulationResult(null);
-  }, [pondasi, sambungan]);
+  const getOptionStyle = (type: 'pondasi' | 'sambungan', value: string) => {
+    const isSelected = type === 'pondasi' ? pondasi === value : sambungan === value;
+    if (!isSelected) return 'border-white bg-white/50 text-stone-400';
+    
+    // Vibrant colors for selection
+    return 'border-yellow-400 bg-yellow-400 text-stone-900 shadow-xl scale-[1.05] ring-4 ring-yellow-400/20';
+  };
 
   return (
-    <div className={`p-6 space-y-8 flex flex-col items-center ${isShaking ? 'animate-earthquake' : ''}`}>
+    <div className={`p-6 space-y-8 flex flex-col items-center min-h-[600px] bg-gradient-to-b from-blue-50 to-white ${isShaking ? 'animate-earthquake' : ''}`}>
       <div className="text-center space-y-2">
-        <h2 className="text-3xl font-black text-brick-red uppercase italic">Guncang Nias!</h2>
-        <p className="text-stone-500 text-sm">Uji desain rumahmu melawan gempa.</p>
+        <h2 className="text-4xl font-black text-blue-900 tracking-tighter uppercase italic drop-shadow-sm">Guncang Nias!</h2>
+        <p className="text-blue-600/60 text-sm font-bold">Uji rahasia bangunan anti-gempa.</p>
       </div>
 
       <div className="w-full space-y-6">
         <div className="space-y-3">
-          <label className="text-sm font-bold text-wood-dark block px-2">Pilih Pondasi:</label>
+          <label className="text-[10px] font-black uppercase text-blue-400 tracking-wider px-2">A. Pilih Jenis Pondasi</label>
           <div className="flex gap-2">
             <button 
-              onClick={() => setPondasi('semen')}
-              className={`flex-1 p-4 rounded-2xl border-2 transition-all ${pondasi === 'semen' ? 'border-red-500 bg-red-50 text-red-600' : 'border-stone-200 text-stone-400'}`}
+              onClick={() => { if(!isShaking) { setPondasi('semen'); setSimulationResult(null); }}}
+              className={`flex-1 p-4 rounded-3xl border-4 transition-all ${getOptionStyle('pondasi', 'semen')}`}
             >
-              <div className="text-xs font-bold uppercase mb-1">Semen Tanam</div>
-              <div className="text-[10px] opacity-60 font-medium">Beresiko Tinggi</div>
+              <div className="text-xs font-black uppercase mb-1">Semen Tanam</div>
+              <div className="text-[10px] opacity-60 font-bold">Kaku & Statis</div>
             </button>
             <button 
-              onClick={() => setPondasi('umpak')}
-              className={`flex-1 p-4 rounded-2xl border-2 transition-all ${pondasi === 'umpak' ? 'border-green-500 bg-green-50 text-green-600' : 'border-stone-200 text-stone-400'}`}
+              onClick={() => { if(!isShaking) { setPondasi('umpak'); setSimulationResult(null); }}}
+              className={`flex-1 p-4 rounded-3xl border-4 transition-all ${getOptionStyle('pondasi', 'umpak')}`}
             >
-              <div className="text-xs font-bold uppercase mb-1">Umpak Batu</div>
-              <div className="text-[10px] opacity-60 font-medium">Sangat Aman</div>
+              <div className="text-xs font-black uppercase mb-1">Umpak Batu</div>
+              <div className="text-[10px] opacity-60 font-bold">Lentur & Bebas</div>
             </button>
           </div>
         </div>
 
         <div className="space-y-3">
-          <label className="text-sm font-bold text-wood-dark block px-2">Pilih Sambungan:</label>
+          <label className="text-[10px] font-black uppercase text-blue-400 tracking-wider px-2">B. Pilih Teknik Sambungan</label>
           <div className="flex gap-2">
             <button 
-              onClick={() => setSambungan('paku')}
-              className={`flex-1 p-4 rounded-2xl border-2 transition-all ${sambungan === 'paku' ? 'border-red-500 bg-red-50 text-red-600' : 'border-stone-200 text-stone-400'}`}
+              onClick={() => { if(!isShaking) { setSambungan('paku'); setSimulationResult(null); }}}
+              className={`flex-1 p-4 rounded-3xl border-4 transition-all ${getOptionStyle('sambungan', 'paku')}`}
             >
-              <div className="text-xs font-bold uppercase mb-1">Paku Besi</div>
-              <div className="text-[10px] opacity-60 font-medium">Mudah Patah</div>
+              <div className="text-xs font-black uppercase mb-1">Paku Besi</div>
+              <div className="text-[10px] opacity-60 font-bold">Resiko Rapuh</div>
             </button>
             <button 
-              onClick={() => setSambungan('pasak')}
-              className={`flex-1 p-4 rounded-2xl border-2 transition-all ${sambungan === 'pasak' ? 'border-green-500 bg-green-50 text-green-600' : 'border-stone-200 text-stone-400'}`}
+              onClick={() => { if(!isShaking) { setSambungan('pasak'); setSimulationResult(null); }}}
+              className={`flex-1 p-4 rounded-3xl border-4 transition-all ${getOptionStyle('sambungan', 'pasak')}`}
             >
-              <div className="text-xs font-bold uppercase mb-1">Pasak Kayu</div>
-              <div className="text-[10px] opacity-60 font-medium">Sangat Fleksibel</div>
+              <div className="text-xs font-black uppercase mb-1">Pasak Kayu</div>
+              <div className="text-[10px] opacity-60 font-bold">Kunci Alami</div>
             </button>
           </div>
         </div>
-
-        <button 
-          onClick={handleSimulate}
-          disabled={isShaking || !pondasi || !sambungan}
-          className={`w-full py-5 rounded-2xl font-black text-xl shadow-xl transition-all ${
-            isShaking 
-              ? 'bg-stone-300' 
-              : (!pondasi || !sambungan) 
-                ? 'bg-stone-200 text-stone-400 cursor-not-allowed'
-                : 'bg-brick-red text-white hover:brightness-110 active:scale-95'
-          }`}
-        >
-          {isShaking ? 'SEDANG GEMPA...' : 'SIMULASIKAN GEMPA'}
-        </button>
       </div>
 
-      <div className="mt-4 flex flex-col items-center w-full">
-        <div className="w-64 h-48 bg-stone-100 rounded-2xl relative overflow-hidden flex items-end justify-center border border-stone-200">
-          <svg viewBox="0 0 200 120" className="w-full h-full">
-            <motion.g 
-              animate={simulationResult === 'collapsed' ? { rotate: -10, y: 15 } : { rotate: 0, y: 0 }}
-              transition={{ type: 'spring', stiffness: 50 }}
-              style={{ transformOrigin: 'center 100px' }}
-            >
-              {/* Foundation */}
-              <rect x="50" y="80" width="100" height="40" rx="4" fill={pondasi ? (pondasi === 'umpak' ? '#D7CCC8' : '#90A4AE') : '#E0E0E0'} />
-              
-              {/* Main Structure Group */}
-              <motion.g animate={simulationResult === 'collapsed' ? { x: [0, -2, 2, 0] } : {}}>
-                <path d="M40 80 L100 20 L160 80 Z" fill="#5D4037" />
-                <rect x="70" y="80" width="8" height="40" fill="#3E2723" />
-                <rect x="122" y="80" width="8" height="40" fill="#3E2723" />
-                
-                {/* Visual Cracks for Collapsed state */}
-                {simulationResult === 'collapsed' && (
-                  <g stroke="#B71C1C" strokeWidth="2">
-                    <line x1="90" y1="90" x2="110" y2="105" />
-                    <line x1="80" y1="40" x2="95" y2="55" />
-                  </g>
-                )}
-              </motion.g>
-            </motion.g>
-
-            {/* Shaking indicators */}
-            {isShaking && (
-              <motion.path 
-                animate={{ opacity: [0, 1, 0], x: [-5, 5, -5] }}
-                transition={{ repeat: Infinity, duration: 0.2 }}
-                d="M20 110 L180 110" stroke="#B71C1C" strokeWidth="2" strokeDasharray="8 4" 
-              />
-            )}
-          </svg>
+      <div className="relative w-full flex flex-col items-center">
+        <HouseSVGViewer isShaking={isShaking} simulationResult={simulationResult} />
+        <div className="w-[85%] h-6 bg-stone-200 rounded-full mt-4 shadow-inner overflow-hidden relative border-4 border-white">
+          <div className="absolute inset-0 bg-stone-400/20" />
         </div>
-        <div className="w-72 h-4 bg-stone-300 rounded-full mt-[-8px] shadow-sm" />
       </div>
+
+      <button 
+        onClick={handleSimulate}
+        disabled={isShaking || !pondasi || !sambungan}
+        className={`w-full py-5 rounded-[32px] font-black text-xl shadow-2xl transition-all active:scale-95 flex items-center justify-center gap-4 ${
+          isShaking || !pondasi || !sambungan
+            ? 'bg-stone-200 text-stone-400 cursor-not-allowed opacity-50' 
+            : 'bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700 text-white shadow-orange-500/30'
+        }`}
+      >
+        {isShaking ? <RefreshCcw size={28} className="animate-spin" /> : (
+          <>
+            <Zap size={24} className="fill-white" />
+            GUNCANG SEKARANG!
+          </>
+        )}
+      </button>
 
       <AnimatePresence>
-        {simulationResult && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-6 bg-black/60 backdrop-blur-md">
+        {simulationResult && !isShaking && (
+          <div className="fixed inset-x-0 top-16 z-[100] flex items-start justify-center p-6 pointer-events-none">
             <motion.div 
-              initial={{ scale: 0.8, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.8, opacity: 0 }}
-              className={`w-full max-w-xs p-8 bg-white rounded-[40px] border-4 shadow-2xl text-center space-y-6 ${
-                simulationResult === 'steady' ? 'border-green-500' : 'border-red-500'
+              initial={{ y: -50, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              exit={{ y: -50, opacity: 0 }}
+              className={`w-full max-w-sm p-6 bg-white/90 backdrop-blur-xl rounded-[32px] shadow-2xl text-center border-[4px] pointer-events-auto flex flex-col items-center ${
+                simulationResult === 'steady' ? 'border-green-500 shadow-green-500/20' : 'border-red-500 shadow-red-500/20'
               }`}
             >
-              <div className={`text-5xl mx-auto w-24 h-24 rounded-full flex items-center justify-center shadow-inner ${
-                simulationResult === 'steady' ? 'bg-green-100 text-green-600' : 'bg-red-100 text-red-600'
-              }`}>
-                {simulationResult === 'steady' ? <CheckCircle2 size={48} strokeWidth={3} /> : <XCircle size={48} strokeWidth={3} />}
+              <div className="flex items-center gap-4 w-full mb-3">
+                <div className={`w-14 h-14 rounded-full flex items-center justify-center shrink-0 shadow-inner ${
+                  simulationResult === 'steady' ? 'bg-green-100 text-green-600' : 'bg-red-100 text-red-600'
+                }`}>
+                  {simulationResult === 'steady' ? <CheckCircle2 size={32} strokeWidth={3} /> : <XCircle size={32} strokeWidth={3} />}
+                </div>
+                <div className="text-left">
+                  <h3 className={`text-2xl font-black italic tracking-tighter uppercase leading-none ${simulationResult === 'steady' ? 'text-green-700' : 'text-red-700'}`}>
+                    {simulationResult === 'steady' ? 'AMAN!' : 'RUNTUH!'}
+                  </h3>
+                  <p className="text-stone-600 font-bold text-[10px] uppercase tracking-wider mt-1 opacity-60">Resultat Simulasi Berakhir</p>
+                </div>
               </div>
               
-              <div className="space-y-2">
-                <h3 className={`text-2xl font-black uppercase tracking-tight ${simulationResult === 'steady' ? 'text-green-700' : 'text-red-700'}`}>
-                  {simulationResult === 'steady' ? 'Tangguh!' : 'Runtuh!'}
-                </h3>
-                <p className="text-sm text-stone-600 font-medium leading-relaxed">
-                  {simulationResult === 'steady' 
-                    ? 'Luar biasa! Rumah Omo Hada-mu selamat. Fleksibilitas adalah kunci kekuatan sejati.' 
-                    : 'Aduh! Rumahmu berantakan. Bangunan yang terlalu kaku akan hancur saat diguncang gempa.'}
-                </p>
-              </div>
+              <p className="text-stone-600 font-bold text-xs leading-relaxed text-left border-y border-stone-100 py-3 mb-4">
+                {simulationResult === 'steady' 
+                  ? 'Kombinasi Etnosainsmu terbukti tangguh melindungi dari ancaman gempa.' 
+                  : 'Struktur runtuh. Kaku & rapuh menjadi penyebab utama kegagalan.'}
+              </p>
 
-              <div className="pt-2">
-                <button 
-                  onClick={() => setSimulationResult(null)}
-                  className={`w-full py-4 rounded-2xl font-bold text-white shadow-lg transition-transform active:scale-95 ${
-                    simulationResult === 'steady' ? 'bg-green-500 shadow-green-200' : 'bg-red-500 shadow-red-200'
-                  }`}
-                >
-                  {simulationResult === 'steady' ? 'Coba Kombinasi Lain' : 'Perbaiki Strategi'}
-                </button>
-              </div>
+              <button 
+                onClick={() => setSimulationResult(null)}
+                className={`w-full py-4 rounded-2xl font-black text-white shadow-lg transition-transform active:scale-95 ${
+                  simulationResult === 'steady' ? 'bg-green-500' : 'bg-red-500'
+                }`}
+              >
+                {simulationResult === 'steady' ? 'COBA LAGI' : 'PERBAIKI DESAIN'}
+              </button>
             </motion.div>
           </div>
         )}
@@ -577,226 +653,287 @@ function JoyfulPage({ isShaking, setIsShaking }: { isShaking: boolean, setIsShak
   );
 }
 
-function MitigasiPage() {
-  const [selectedActions, setSelectedActions] = useState<number[]>([]);
-  const [isFinished, setIsFinished] = useState(false);
-  const [showResult, setShowResult] = useState<'correct' | 'wrong' | null>(null);
+// --- Mitigation Components ---
 
-  const actions = [
-    { id: 1, text: "Berlindung di bawah meja", isCorrect: true, detail: "Melindungi kepala dari reruntuhan." },
-    { id: 2, text: "Lari ke arah lift", isCorrect: false, detail: "Bahaya terjebak jika listrik mati." },
-    { id: 3, text: "Jauhi kaca & lemari besar", isCorrect: true, detail: "Menghindari pecahan kaca & benda jatuh." },
-    { id: 4, text: "Tetap di dalam rumah beton retak", isCorrect: false, detail: "Resiko runtuh saat gempa susulan." },
-  ];
+interface MitigationItem {
+  id: string;
+  text: string;
+  isCorrect: boolean;
+  detail: string;
+}
 
-  const handleToggle = (id: number) => {
-    if (isFinished || showResult === 'correct') return;
-    if (selectedActions.includes(id)) {
-      setSelectedActions(selectedActions.filter(aid => aid !== id));
-    } else {
-      setSelectedActions([...selectedActions, id]);
-    }
-  };
+function DraggableItem({ item, disabled }: { item: MitigationItem, disabled?: boolean }) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging
+  } = useSortable({ id: item.id, disabled });
 
-  const checkResult = () => {
-    const correctIds = actions.filter(a => a.isCorrect).map(a => a.id);
-    const isCorrect = selectedActions.length === correctIds.length && 
-                      selectedActions.every(id => correctIds.includes(id));
-    
-    if (isCorrect) {
-      setShowResult('correct');
-    } else {
-      setShowResult('wrong');
-    }
+  const style = {
+    transform: CSS.Translate.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+    zIndex: isDragging ? 100 : 1
   };
 
   return (
-    <div className="p-6 space-y-8 pb-32">
-      <header className="space-y-2">
-        <span className="text-brick-red font-bold text-xs uppercase tracking-widest italic">Uji Pengetahuan</span>
-        <h2 className="text-3xl font-black text-wood-dark tracking-tight">Zona Mitigasi</h2>
-        <p className="text-sm text-stone-500 font-medium">Mana aksi yang benar saat gempa? Pilih semua yang tepat:</p>
-      </header>
-
-      <div className="grid gap-3">
-        {actions.map((action) => {
-          const isSelected = selectedActions.includes(action.id);
-          const isCorrect = action.isCorrect;
-          const showFeedback = showResult !== null;
-
-          return (
-            <motion.button
-              key={action.id}
-              whileTap={{ scale: 0.98 }}
-              onClick={() => handleToggle(action.id)}
-              className={`p-5 rounded-3xl text-left border-2 transition-all relative overflow-hidden ${
-                showFeedback
-                  ? (isSelected === isCorrect && isCorrect)
-                    ? 'border-green-500 bg-green-50/50'
-                    : (isSelected && !isCorrect)
-                      ? 'border-red-500 bg-red-50/50'
-                      : 'border-stone-100 bg-stone-50'
-                  : isSelected 
-                    ? 'border-brick-red bg-brick-red/5' 
-                    : 'border-stone-200 bg-white'
-              }`}
-            >
-              <div className="flex items-center justify-between relative z-10">
-                <span className={`font-bold transition-colors ${
-                  showFeedback 
-                    ? (isCorrect ? 'text-green-700' : 'text-stone-400')
-                    : isSelected ? 'text-brick-red' : 'text-stone-700'
-                }`}>
-                  {action.text}
-                </span>
-                <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all ${
-                  showFeedback
-                    ? (isCorrect ? 'bg-green-500 border-green-500 text-white' : 'border-stone-300')
-                    : isSelected ? 'bg-brick-red border-brick-red text-white' : 'border-stone-300'
-                }`}>
-                  {(isSelected || (showFeedback && isCorrect)) && <CheckCircle2 size={14} strokeWidth={3} />}
-                </div>
-              </div>
-            </motion.button>
-          );
-        })}
+    <div
+      ref={setNodeRef}
+      style={style}
+      {...attributes}
+      {...listeners}
+      className={`p-3 bg-white rounded-2xl border-2 border-stone-100 shadow-sm flex items-center gap-3 transition-all hover:border-blue-200 active:scale-105 ${disabled ? 'cursor-default opacity-50' : 'cursor-grab active:cursor-grabbing'}`}
+    >
+      <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${disabled ? 'bg-stone-100 text-stone-300' : 'bg-blue-50 text-blue-500'}`}>
+        <Grab size={14} />
       </div>
+      <span className="text-[10px] font-black text-stone-700 leading-tight">{item.text}</span>
+    </div>
+  );
+}
 
-      <div className="space-y-4">
-        {!isFinished && (
-          <button 
-            onClick={checkResult}
-            disabled={selectedActions.length === 0}
-            className={`w-full py-5 rounded-2xl font-black text-xl shadow-xl transition-all ${
-              selectedActions.length === 0
-                ? 'bg-stone-200 text-stone-400 cursor-not-allowed'
-                : 'bg-wood-dark text-white hover:brightness-110 active:scale-95'
-            }`}
-          >
-            KIRIM JAWABAN
-          </button>
-        )}
+function DropZone({ id, items, title, icon, color, showFeedback }: { 
+  id: string, 
+  items: MitigationItem[], 
+  title: string, 
+  icon: any, 
+  color: string,
+  showFeedback: boolean
+}) {
+  const { setNodeRef, isOver } = useSortable({ id });
 
-        {isFinished && (
-          <div className="text-center p-6 bg-yellow-50 rounded-3xl border-2 border-yellow-200 border-dashed">
-            <p className="text-sm font-bold text-yellow-700 mb-4 animate-bounce">Lencana Siaga Tersedia! 🏅</p>
-            <button 
-              className="w-full bg-yellow-500 text-white font-black py-4 rounded-xl shadow-lg active:scale-95 transition-transform"
-              onClick={() => alert("Membuka Portal Lencana...")}
-            >
-              LIHAT LENCANA SAYA
-            </button>
+  return (
+    <div className="flex-1 flex flex-col gap-3">
+      <div className={`p-4 rounded-[28px] border-4 flex items-center justify-center gap-2 shadow-sm ${color} transition-transform duration-300 ${isOver ? 'scale-105' : ''}`}>
+        {icon}
+        <span className="font-black italic uppercase tracking-tighter text-[10px]">{title}</span>
+      </div>
+      
+      <div 
+        ref={setNodeRef}
+        className={`flex-1 min-h-[320px] p-2 rounded-[32px] border-4 border-dashed transition-all duration-300 flex flex-col gap-2 ${
+          isOver ? 'bg-blue-50 border-blue-400 scale-[1.02] shadow-xl' : 'bg-stone-50/50 border-stone-200'
+        } ${items.length === 0 ? 'items-center justify-center' : ''}`}
+      >
+        {items.length === 0 ? (
+          <div className="text-center space-y-1 opacity-20 pointer-events-none">
+            <Grab size={24} className="mx-auto mb-2" />
+            <p className="text-[8px] font-black uppercase tracking-[0.2em]">Tarik Ke Sini</p>
           </div>
-        )}
-      </div>
-
-      {/* Result Modals */}
-      <AnimatePresence>
-        {showResult && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-6 bg-black/60 backdrop-blur-md">
+        ) : (
+          items.map(item => (
             <motion.div 
+              key={item.id}
               initial={{ scale: 0.8, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.8, opacity: 0 }}
-              className={`w-full max-w-xs p-8 bg-white rounded-[40px] border-4 shadow-2xl text-center space-y-6 ${
-                showResult === 'correct' ? 'border-green-500' : 'border-red-500'
+              className={`p-3 rounded-2xl border-2 shadow-sm text-center relative overflow-hidden transition-all ${
+                showFeedback 
+                  ? (id === 'benar' && item.isCorrect) || (id === 'salah' && !item.isCorrect)
+                    ? 'border-green-500 bg-green-50 text-green-700'
+                    : 'border-red-500 bg-red-50 text-red-700'
+                  : 'border-white bg-white text-stone-800'
               }`}
             >
-              <div className={`text-5xl mx-auto w-24 h-24 rounded-full flex items-center justify-center shadow-inner ${
-                showResult === 'correct' ? 'bg-green-100 text-green-600' : 'bg-red-100 text-red-600'
-              }`}>
-                {showResult === 'correct' ? <CheckCircle2 size={48} strokeWidth={3} /> : <XCircle size={48} strokeWidth={3} />}
-              </div>
-              
-              <div className="space-y-2">
-                <h3 className={`text-2xl font-black uppercase tracking-tight ${showResult === 'correct' ? 'text-green-700' : 'text-red-700'}`}>
-                  {showResult === 'correct' ? 'Luar Biasa!' : 'Belum Tepat'}
-                </h3>
-                <p className="text-sm text-stone-600 font-medium leading-relaxed">
-                  {showResult === 'correct' 
-                    ? 'Kamu paham betul cara menyelamatkan diri. Sekarang kamu layak mendapatkan lencana!' 
-                    : 'Ada beberapa aksi yang membahayakan diri. Yuk, pelajari lagi mitigasi yang aman.'}
-                </p>
-              </div>
-
-              <div className="pt-2">
-                <button 
-                  onClick={() => {
-                    if (showResult === 'correct') {
-                      setIsFinished(true);
-                    }
-                    setShowResult(null);
-                  }}
-                  className={`w-full py-4 rounded-2xl font-bold text-white shadow-lg transition-transform active:scale-95 ${
-                    showResult === 'correct' ? 'bg-green-500 shadow-green-200' : 'bg-red-500 shadow-red-200'
-                  }`}
+              <p className="text-[10px] font-black leading-tight">{item.text}</p>
+              {showFeedback && (
+                <motion.div 
+                  initial={{ height: 0, opacity: 0 }}
+                  animate={{ height: 'auto', opacity: 1 }}
+                  className="mt-1 pt-1 border-t border-current/10 text-[8px] font-bold opacity-80"
                 >
-                  {showResult === 'correct' ? 'Klaim Lencana' : 'Coba Lagi'}
-                </button>
-              </div>
+                  {item.detail}
+                </motion.div>
+              )}
             </motion.div>
-          </div>
+          ))
         )}
-      </AnimatePresence>
+      </div>
+    </div>
+  );
+}
 
-      {/* Badge View (if isFinished) */}
+function MitigasiPage() {
+  const [initialItems] = useState<MitigationItem[]>([
+    { id: '1', text: "Berlindung di bawah meja", isCorrect: true, detail: "Melindungi kepala dari reruntuhan." },
+    { id: '2', text: "Lari ke arah lift & tangga", isCorrect: false, detail: "Bahaya terjebak jika listrik mati." },
+    { id: '3', text: "Jauhi kaca & lemari besar", isCorrect: true, detail: "Menghindari pecahan kaca tajam." },
+    { id: '4', text: "Tetap di gedung beton retak", isCorrect: false, detail: "Resiko runtuh saat gempa susulan." },
+    { id: '5', text: "Gunakan tangga darurat", isCorrect: true, detail: "Akses aman saat evakuasi." },
+    { id: '6', text: "Gunakan lift saat gempa", isCorrect: false, detail: "Rawan terjebak macet/rusak." },
+  ]);
+
+  const [pool, setPool] = useState<MitigationItem[]>(initialItems);
+  const [benar, setBenar] = useState<MitigationItem[]>([]);
+  const [salah, setSalah] = useState<MitigationItem[]>([]);
+  const [showFeedback, setShowFeedback] = useState(false);
+  const [activeItemId, setActiveItemId] = useState<string | null>(null);
+  const [isFinished, setIsFinished] = useState(false);
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
+  );
+
+  const handleDragEnd = (event: any) => {
+    const { active, over } = event;
+    setActiveItemId(null);
+
+    if (!over) return;
+
+    const itemId = active.id;
+    const overId = over.id;
+
+    // Find the item in pool
+    const item = pool.find(i => i.id === itemId);
+    if (!item) return;
+
+    if (overId === 'benar') {
+      setBenar(prev => [...prev, item]);
+      setPool(prev => prev.filter(i => i.id !== itemId));
+    } else if (overId === 'salah') {
+      setSalah(prev => [...prev, item]);
+      setPool(prev => prev.filter(i => i.id !== itemId));
+    }
+  };
+
+  const resetGame = () => {
+    setPool(initialItems);
+    setBenar([]);
+    setSalah([]);
+    setShowFeedback(false);
+    setIsFinished(false);
+  };
+
+  const activeItemData = initialItems.find(i => i.id === activeItemId);
+
+  return (
+    <div className="p-6 space-y-6 bg-gradient-to-b from-stone-50 to-white min-h-[700px] flex flex-col items-center pb-40">
+      <div className="text-center space-y-2 w-full">
+        <div className="flex justify-center gap-2 mb-2">
+          <span className="px-3 py-1 bg-brick-red/10 text-brick-red text-[10px] font-black rounded-full uppercase tracking-tighter">Fase Mitigasi</span>
+        </div>
+        <h2 className="text-3xl font-black text-stone-900 tracking-tighter uppercase leading-none italic drop-shadow-sm">Siaga Gempa</h2>
+        <p className="text-stone-500 text-[10px] font-black uppercase tracking-widest leading-relaxed px-4">Tarik aksi ke kolom yang tepat!</p>
+      </div>
+
+      <DndContext 
+        sensors={sensors}
+        collisionDetection={closestCenter}
+        onDragStart={({active}) => setActiveItemId(active.id as string)}
+        onDragEnd={handleDragEnd}
+      >
+        <div className="flex gap-3 w-full">
+          <DropZone 
+            id="benar" 
+            title="Benar (✓)" 
+            items={benar} 
+            icon={<CheckCircle2 size={18} strokeWidth={3} />} 
+            color="border-green-500 bg-green-500 text-white" 
+            showFeedback={showFeedback}
+          />
+          <DropZone 
+            id="salah" 
+            title="Salah (×)" 
+            items={salah} 
+            icon={<XCircle size={18} strokeWidth={3} />} 
+            color="border-red-500 bg-red-500 text-white" 
+            showFeedback={showFeedback}
+          />
+        </div>
+
+        <div className="w-full space-y-4 pt-4 border-t-2 border-stone-100 mt-2">
+          <div className="flex items-center justify-between px-2">
+            <h3 className="text-[10px] font-black text-stone-400 uppercase tracking-widest flex items-center gap-2">
+              <MousePointer2 size={12} /> Daftar Aksi
+            </h3>
+            {pool.length > 0 && (
+              <span className="text-[10px] font-black text-blue-500 bg-blue-50 px-2 py-0.5 rounded-full animate-pulse">{pool.length} Tersisa</span>
+            )}
+          </div>
+
+          <div className="grid grid-cols-2 gap-2">
+            <SortableContext items={pool.map(i => i.id)} strategy={verticalListSortingStrategy}>
+              {pool.map((item) => (
+                <DraggableItem key={item.id} item={item} disabled={showFeedback} />
+              ))}
+            </SortableContext>
+          </div>
+          
+          {pool.length === 0 && !showFeedback && (
+            <motion.div 
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              className="p-6 bg-blue-50 rounded-[32px] border-2 border-blue-200 border-dashed text-center shadow-inner"
+            >
+              <p className="text-xs font-black text-blue-700 uppercase italic">Semua aksi sudah dipilah!</p>
+              <p className="text-[10px] font-bold text-blue-500 mt-1 uppercase tracking-widest">Silahkan cek jawabanmu.</p>
+            </motion.div>
+          )}
+        </div>
+
+        <DragOverlay zIndex={1000}>
+          {activeItemData ? (
+            <div className="p-3 bg-white rounded-2xl border-4 border-blue-500 shadow-2xl flex items-center gap-3 cursor-grabbing scale-110 rotate-3 ring-4 ring-blue-500/20">
+              <div className="w-8 h-8 rounded-lg bg-blue-500 text-white flex items-center justify-center shrink-0">
+                <Grab size={14} />
+              </div>
+              <span className="text-[10px] font-black text-stone-900 leading-tight">{activeItemData.text}</span>
+            </div>
+          ) : null}
+        </DragOverlay>
+      </DndContext>
+
+      <div className="flex gap-3 w-full pt-4">
+        <button 
+          onClick={resetGame}
+          className="flex-1 py-4 bg-stone-100 hover:bg-stone-200 text-stone-600 rounded-[24px] font-black text-xs transition-all flex items-center justify-center gap-2 active:scale-95 border-b-4 border-stone-200"
+        >
+          <RefreshCcw size={16} /> ULANGI
+        </button>
+        <button 
+          onClick={() => {
+            setShowFeedback(true);
+            const isAllCorrect = benar.every(i => i.isCorrect) && salah.every(i => !i.isCorrect) && benar.length + salah.length === initialItems.length;
+            if (isAllCorrect) setIsFinished(true);
+          }}
+          disabled={pool.length > 0 || showFeedback}
+          className={`flex-[2] py-4 rounded-[24px] font-black text-xs shadow-xl transition-all flex items-center justify-center gap-2 active:scale-95 ${
+            pool.length > 0 || showFeedback
+              ? 'bg-stone-200 text-stone-400 cursor-not-allowed opacity-50' 
+              : 'bg-brick-red text-white hover:bg-red-700 shadow-red-200 border-b-4 border-red-900'
+          }`}
+        >
+          {showFeedback ? <LightbulbIcon size={16} /> : <Zap size={16} />} 
+          {showFeedback ? 'HASIL SIMULASI' : 'CEK JAWABAN'}
+        </button>
+      </div>
+
       <AnimatePresence>
         {isFinished && (
           <motion.div 
-            initial={{ y: 100, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            className="fixed inset-0 z-[60] bg-wood-dark flex flex-col items-center justify-center p-8 text-center"
+            initial={{ scale: 0.8, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            className="w-full p-8 bg-yellow-400 rounded-[40px] border-4 border-yellow-200 text-center space-y-4 shadow-2xl shadow-yellow-200 mt-4"
           >
-            <motion.div 
-              animate={{ rotate: [0, 10, -10, 0], scale: [1, 1.1, 1] }}
-              transition={{ repeat: Infinity, duration: 4 }}
-              className="w-48 h-48 bg-yellow-400 rounded-full flex items-center justify-center border-[12px] border-yellow-200 shadow-[0_0_50px_rgba(250,204,21,0.5)] mb-8"
-            >
-              <ShieldAlert size={100} className="text-white" />
-            </motion.div>
-            
-            <h1 className="text-4xl font-black text-white mb-2 uppercase italic tracking-tighter">Siaga Gempa!</h1>
-            <p className="text-yellow-400 font-bold mb-12">Lencana Ahli Mitigasi Nias</p>
-
-            <div className="w-full space-y-3">
-              <button 
-                onClick={() => {
-                  if (navigator.share) {
-                    navigator.share({
-                      title: 'Lencana Siaga Gempa Nias',
-                      text: 'Saya sudah belajar mitigasi gempa melalui Nias Quake-Wise App!',
-                      url: window.location.href,
-                    });
-                  } else {
-                    alert('Lencana disimpan!');
-                  }
-                }}
-                className="w-full bg-white text-wood-dark font-black py-5 rounded-2xl shadow-xl active:scale-95 transition-transform"
-              >
-                BAGIKAN KE TEMAN
-              </button>
-              <button 
-                onClick={() => setIsFinished(false)}
-                className="text-white/40 font-bold text-sm"
-              >
-                Tutup Galeri
-              </button>
+            <div className="w-20 h-20 bg-white rounded-full flex items-center justify-center mx-auto shadow-inner">
+              <ShieldAlert size={40} className="text-yellow-600" />
             </div>
+            <h3 className="text-2xl font-black text-white uppercase italic tracking-tighter">Ahli Mitigasi!</h3>
+            <p className="text-white font-bold text-xs leading-relaxed uppercase tracking-widest opacity-90">Kamu layak mendapatkan lencana kesiapsiagaan.</p>
+            <button 
+              onClick={() => alert("Lencana Kesiapsiagaan Nias Berhasil Diklaim! 🏅")}
+              className="w-full py-4 bg-white text-yellow-600 rounded-2xl font-black text-sm shadow-lg active:scale-95 transition-transform"
+            >
+              KLAIM LENCANA SAYA
+            </button>
           </motion.div>
         )}
       </AnimatePresence>
 
-      <div className="bg-stone-100 p-6 rounded-3xl border border-stone-200 flex gap-4 items-center">
-        <div className="bg-wood-dark p-3 rounded-2xl text-white">
-          <Info size={24} />
-        </div>
-        <div className="space-y-1">
-          <h4 className="font-bold text-wood-dark text-sm">Metode 20-20-20</h4>
-          <p className="text-[10px] leading-relaxed text-stone-500 font-medium">
-            Gempa {">"} 20 detik? Lari ke tempat setinggi 20m dalam 20 menit!
-          </p>
-        </div>
-      </div>
+
     </div>
   );
 }
