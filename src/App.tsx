@@ -71,12 +71,12 @@ function OmoHadaModel({ isShaking, simulationResult }: { isShaking?: boolean, si
     } else if (simulationResult === 'collapsed') {
       // Tilt and sink for failure
       meshRef.current.rotation.z = THREE.MathUtils.lerp(meshRef.current.rotation.z, -0.3, 0.05);
-      meshRef.current.position.y = THREE.MathUtils.lerp(meshRef.current.position.y, -1.2, 0.05);
+      meshRef.current.position.y = THREE.MathUtils.lerp(meshRef.current.position.y, -3.8, 0.05);
       meshRef.current.position.x = THREE.MathUtils.lerp(meshRef.current.position.x, -0.5, 0.05);
     } else {
       // Return to normal
       meshRef.current.position.x = THREE.MathUtils.lerp(meshRef.current.position.x, 0, 0.1);
-      meshRef.current.position.y = THREE.MathUtils.lerp(meshRef.current.position.y, 0, 0.1);
+      meshRef.current.position.y = THREE.MathUtils.lerp(meshRef.current.position.y, -2.8, 0.1);
       meshRef.current.position.z = THREE.MathUtils.lerp(meshRef.current.position.z, 0, 0.1);
       meshRef.current.rotation.z = THREE.MathUtils.lerp(meshRef.current.rotation.z, 0, 0.1);
       meshRef.current.rotation.x = THREE.MathUtils.lerp(meshRef.current.rotation.x, 0, 0.1);
@@ -103,15 +103,19 @@ function House3DViewer({ isShaking, simulationResult }: { isShaking?: boolean, s
         <span className="text-[10px] font-bold uppercase tracking-wider">Model 3D Interaktif</span>
       </div>
       
-      <Canvas shadows dpr={[1, 2]}>
+      <Canvas 
+        shadows 
+        dpr={[1, 2]} 
+        gl={{ antialias: true, alpha: true }}
+        className="touch-none"
+      >
         <PerspectiveCamera makeDefault position={[4, 2, 4]} fov={38} />
-        <ambientLight intensity={1.5} />
-        <hemisphereLight intensity={1.5} groundColor="#4a4a4a" />
-        <directionalLight position={[10, 15, 10]} intensity={3.5} castShadow />
-        <spotLight position={[20, 20, 20]} angle={0.3} penumbra={1} intensity={4.0} castShadow />
-        <pointLight position={[-15, 10, -15]} intensity={2.0} />
-        <pointLight position={[0, 5, 5]} intensity={2.0} />
-        <pointLight position={[5, -5, 5]} intensity={1.0} />
+        <ambientLight intensity={1.8} />
+        <hemisphereLight intensity={1.2} groundColor="#4a4a4a" />
+        <directionalLight position={[10, 15, 10]} intensity={2.5} castShadow />
+        <pointLight position={[-15, 10, -15]} intensity={1.5} />
+        <pointLight position={[0, 5, 5]} intensity={1.5} />
+        <pointLight position={[5, -5, 5]} intensity={0.8} />
         
         <Suspense fallback={null}>
           <OmoHadaModel isShaking={isShaking} simulationResult={simulationResult} />
