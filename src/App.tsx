@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { useState, useEffect, Suspense, useRef } from 'react';
+import React, { useState, useEffect, Suspense, useRef } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Canvas, useFrame } from '@react-three/fiber';
 import { OrbitControls, PerspectiveCamera, Environment, ContactShadows, useGLTF } from '@react-three/drei';
@@ -53,6 +53,38 @@ import {
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 
+// --- Error Boundary for 3D ---
+
+class ErrorBoundary extends React.Component<{ children: React.ReactNode }, { hasError: boolean }> {
+  constructor(props: any) {
+    super(props);
+    this.state = { hasError: false };
+  }
+
+  static getDerivedStateFromError() {
+    return { hasError: true };
+  }
+
+  componentDidCatch(error: any, errorInfo: any) {
+    console.error("3D Canvas Error:", error, errorInfo);
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div className="w-full h-full flex flex-col items-center justify-center bg-stone-900 p-6 text-center">
+          <AlertTriangle size={48} className="text-nias-gold mb-4" />
+          <p className="text-white font-black text-xs uppercase tracking-widest leading-relaxed">
+            Maaf, Model 3D gagal dimuat.<br/>
+            <span className="opacity-50 font-bold">Harap segarkan halaman.</span>
+          </p>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
+
 // --- 3D Components ---
 
 function OmoHadaModel({ isShaking, simulationResult }: { isShaking?: boolean, simulationResult?: 'steady' | 'collapsed' | null }) {
@@ -97,43 +129,45 @@ useGLTF.preload('/Copilot3D-6a753cf7-a08a-4c62-92e0-84fac9ae7946.glb');
 
 function House3DViewer({ isShaking, simulationResult }: { isShaking?: boolean, simulationResult?: 'steady' | 'collapsed' | null }) {
   return (
-    <div className="w-full h-[320px] bg-stone-100 rounded-3xl overflow-hidden relative border-2 border-stone-200 shadow-inner">
+    <div className="w-full h-full bg-stone-100 rounded-3xl overflow-hidden relative shadow-inner">
       <div className="absolute top-4 left-4 z-10 flex items-center gap-2 bg-white/90 backdrop-blur-sm px-3 py-1.5 rounded-full border border-stone-200 text-stone-500 shadow-sm">
         <Rotate3d size={16} />
         <span className="text-[10px] font-bold uppercase tracking-wider">Model 3D Interaktif</span>
       </div>
       
-      <Canvas 
-        shadows 
-        dpr={[1, 2]} 
-        gl={{ antialias: true, alpha: true }}
-        className="touch-none"
-      >
-        <PerspectiveCamera makeDefault position={[4, 2, 4]} fov={38} />
-        <ambientLight intensity={1.8} />
-        <hemisphereLight intensity={1.2} groundColor="#4a4a4a" />
-        <directionalLight position={[10, 15, 10]} intensity={2.5} castShadow />
-        <pointLight position={[-15, 10, -15]} intensity={1.5} />
-        <pointLight position={[0, 5, 5]} intensity={1.5} />
-        <pointLight position={[5, -5, 5]} intensity={0.8} />
-        
-        <Suspense fallback={null}>
-          <OmoHadaModel isShaking={isShaking} simulationResult={simulationResult} />
-          <ContactShadows position={[0, -2, 0]} opacity={0.6} scale={15} blur={2.5} far={4} />
-          <Environment preset="city" />
-        </Suspense>
-
-        <OrbitControls 
-          enablePan={false} 
-          enableZoom={true}
-          enableDamping={true}
-          dampingFactor={0.05}
-          minDistance={1.5} 
-          maxDistance={12}
-          autoRotate={false}
-          autoRotateSpeed={0.8}
-        />
-      </Canvas>
+      <ErrorBoundary>
+        <Canvas 
+          shadows 
+          dpr={[1, 2]} 
+          gl={{ antialias: true, alpha: true, powerPreference: "high-performance" }}
+          className="touch-none"
+        >
+          <PerspectiveCamera makeDefault position={[4, 2, 4]} fov={38} />
+          <ambientLight intensity={1.8} />
+          <hemisphereLight intensity={1.2} groundColor="#4a4a4a" />
+          <directionalLight position={[10, 15, 10]} intensity={2.5} castShadow />
+          <pointLight position={[-15, 10, -15]} intensity={1.5} />
+          <pointLight position={[0, 5, 5]} intensity={1.5} />
+          <pointLight position={[5, -5, 5]} intensity={0.8} />
+          
+          <Suspense fallback={null}>
+            <OmoHadaModel isShaking={isShaking} simulationResult={simulationResult} />
+            <ContactShadows position={[0, -2, 0]} opacity={0.6} scale={15} blur={2.5} far={4} />
+            <Environment preset="city" />
+          </Suspense>
+  
+          <OrbitControls 
+            enablePan={false} 
+            enableZoom={true}
+            enableDamping={true}
+            dampingFactor={0.05}
+            minDistance={1.5} 
+            maxDistance={12}
+            autoRotate={false}
+            autoRotateSpeed={0.8}
+          />
+        </Canvas>
+      </ErrorBoundary>
     </div>
   );
 }
@@ -197,9 +231,19 @@ export default function App() {
 }
 
 function DashboardPage({ onSelect }: { onSelect: (p: Page) => void }) {
-  const modules = [
+  interface ModuleItem {
+    id: Page;
+    title: string;
+    subtitle: string;
+    icon: any;
+    color: string;
+    des: string;
+    iconColor?: string;
+  }
+
+  const modules: ModuleItem[] = [
     { id: 'mindful', title: 'Mindful', subtitle: 'Sejarah & Tragedi', icon: Heart, color: 'bg-brick-red', des: 'Pahami luka masa lalu & kearifan lokal.' },
-    { id: 'meaningful', title: 'Meaningful', subtitle: 'Anatomi Etnosains', icon: Lightbulb, color: 'bg-nias-gold', iconColor: 'text-stone-900', des: 'Rahasia struktur tahan gempa Omo Hada.' },
+    { id: 'meaningful', title: 'Meaningful', subtitle: 'Anatomi Etnosains', icon: Lightbulb, color: 'bg-nias-gold', des: 'Rahasia struktur tahan gempa Omo Hada.' },
     { id: 'joyful', title: 'Joyful', subtitle: 'Simulasi Gempa', icon: Gamepad2, color: 'bg-wood-dark', des: 'Uji ketahanan desainmu secara interaktif.' },
     { id: 'mitigasi', title: 'Mitigasi', subtitle: 'Aksi Penyelamatan', icon: ShieldAlert, color: 'bg-stone-600', des: 'Pelajari langkah siaga saat darurat.' }
   ];
@@ -236,7 +280,7 @@ function DashboardPage({ onSelect }: { onSelect: (p: Page) => void }) {
                 <Icon size={24} />
               </div>
               <div className="space-y-1">
-                <span className="text-[10px] uppercase font-black tracking-widest text-stone-400">{(m as any).subtitle}</span>
+                <span className="text-[10px] uppercase font-black tracking-widest text-stone-400">{m.subtitle}</span>
                 <h3 className="text-xl font-black text-stone-800">{m.title}</h3>
                 <p className="text-xs text-stone-500 font-bold leading-relaxed">{m.des}</p>
               </div>
@@ -314,8 +358,6 @@ function MindfulPage({ onNext }: { onNext: () => void }) {
 }
 
 function MeaningfulPage() {
-  const [activeModal, setActiveModal] = useState<'ehomo' | 'diwa' | 'paku' | null>('ehomo');
-
   const anatomyDetails = {
     ehomo: {
       title: "Ehomo (Pondasi Batu)",
@@ -330,6 +372,8 @@ function MeaningfulPage() {
       desc: "Seluruh sambungan menggunakan sistem pasak kayu yang sangat lentur."
     }
   };
+
+  const [activeModal, setActiveModal] = useState<keyof typeof anatomyDetails | null>('ehomo');
 
   const playKnock = () => {
     try {
@@ -386,8 +430,8 @@ function MeaningfulPage() {
                     : 'bg-white border-stone-100 text-stone-400 hover:border-stone-200 active:scale-95'
                 }`}
               >
-                <span className="text-[10px] font-black uppercase mb-1 opacity-60 tracking-wider">{(item as any).point}</span>
-                <span className="text-xs font-black tracking-tight leading-tight text-center">{(item as any).label}</span>
+                <span className="text-[10px] font-black uppercase mb-1 opacity-60 tracking-wider">{item.point}</span>
+                <span className="text-xs font-black tracking-tight leading-tight text-center">{item.label}</span>
               </button>
             ))}
           </div>
@@ -407,13 +451,13 @@ function MeaningfulPage() {
                   <div className="flex items-center gap-3">
                     <div className="w-4 h-4 rounded-full bg-nias-gold shadow-sm" />
                     <h3 className="text-2xl font-black text-stone-900 tracking-tighter italic uppercase">
-                      {anatomyDetails[activeModal as keyof typeof anatomyDetails].title}
+                      {anatomyDetails[activeModal].title}
                     </h3>
                   </div>
                   <div className="space-y-2">
                     <p className="text-brick-red font-black text-[10px] uppercase tracking-[0.2em] opacity-50">Mengapa Ini Penting?</p>
                     <p className="text-stone-800 text-lg leading-snug font-bold">
-                      {anatomyDetails[activeModal as keyof typeof anatomyDetails].desc}
+                      {anatomyDetails[activeModal].desc}
                     </p>
                   </div>
                 </div>
