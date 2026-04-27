@@ -169,8 +169,8 @@ class ErrorBoundary extends React.Component<{ children: React.ReactNode, onFatal
 function OmoHadaModel({ isShaking, simulationResult }: { isShaking?: boolean, simulationResult?: 'steady' | 'collapsed' | null }) {
   const meshRef = useRef<THREE.Group>(null);
   
-  // Load the GLTF model.
-  const { scene } = useGLTF('Copilot3D-6a753cf7-a08a-4c62-92e0-84fac9ae7946.glb');
+  // Load the GLTF model with Draco support.
+  const { scene } = useGLTF('/Omo Hada.glb', 'https://www.gstatic.com/draco/versioned/decoders/1.5.5/');
 
   useFrame((state) => {
     if (!meshRef.current) return;
@@ -204,7 +204,7 @@ function OmoHadaModel({ isShaking, simulationResult }: { isShaking?: boolean, si
 }
 
 // Preload for better experience
-useGLTF.preload('Copilot3D-6a753cf7-a08a-4c62-92e0-84fac9ae7946.glb');
+useGLTF.preload('/Omo Hada.glb', 'https://www.gstatic.com/draco/versioned/decoders/1.5.5/');
 
 function Loader() {
   const { progress } = useProgress();
