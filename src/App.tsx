@@ -6,7 +6,7 @@
 import React, { useState, useEffect, Suspense, useRef } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Canvas, useFrame } from '@react-three/fiber';
-import { OrbitControls, PerspectiveCamera, Environment, ContactShadows, useGLTF, Html } from '@react-three/drei';
+import { OrbitControls, PerspectiveCamera, Environment, ContactShadows, useGLTF, Html, useProgress } from '@react-three/drei';
 import * as THREE from 'three';
 import { 
   Heart, 
@@ -36,7 +36,8 @@ import {
   Home,
   Grab,
   MousePointer2,
-  Lightbulb as LightbulbIcon
+  Lightbulb as LightbulbIcon,
+  BookOpen
 } from 'lucide-react';
 import {
   DndContext, 
@@ -148,7 +149,7 @@ class ErrorBoundary extends React.Component<{ children: React.ReactNode, onFatal
           </motion.div>
           <h3 className="text-white font-black text-sm uppercase tracking-widest mb-2">MODEL GAGAL DIMUAT</h3>
           <p className="text-stone-400 font-bold text-[10px] leading-relaxed mb-6 max-w-[200px]">
-            Masalah koneksi atau perangkat tidak mendukung WebGL.
+            Masalah koneksi, memori, atau file model tidak ditemukan. Pastikan koneksi stabil.
           </p>
           <button 
             onClick={() => window.location.reload()}
@@ -168,30 +169,26 @@ class ErrorBoundary extends React.Component<{ children: React.ReactNode, onFatal
 function OmoHadaModel({ isShaking, simulationResult }: { isShaking?: boolean, simulationResult?: 'steady' | 'collapsed' | null }) {
   const meshRef = useRef<THREE.Group>(null);
   
-  // Try to load the GLTF model with absolute path.
-  const { scene } = useGLTF('/Copilot3D-6a753cf7-a08a-4c62-92e0-84fac9ae7946.glb');
+  // Try to load the GLTF model with Draco support.
+  const { scene } = useGLTF('/Copilot3D-6a753cf7-a08a-4c62-92e0-84fac9ae7946.glb', 'https://www.gstatic.com/draco/versioned/decoders/1.5.5/');
 
   useFrame((state) => {
     if (!meshRef.current) return;
 
     if (isShaking) {
-      // Intense vibration
-      meshRef.current.position.x = Math.sin(state.clock.elapsedTime * 50) * 0.15;
-      meshRef.current.position.y = Math.cos(state.clock.elapsedTime * 60) * 0.05;
-      meshRef.current.position.z = Math.sin(state.clock.elapsedTime * 40) * 0.1;
-      meshRef.current.rotation.x = Math.sin(state.clock.elapsedTime * 30) * 0.02;
-    } else if (simulationResult === 'collapsed') {
-      // Tilt and sink for failure
-      meshRef.current.rotation.z = THREE.MathUtils.lerp(meshRef.current.rotation.z, -0.3, 0.05);
-      meshRef.current.position.y = THREE.MathUtils.lerp(meshRef.current.position.y, -3.8, 0.05);
-      meshRef.current.position.x = THREE.MathUtils.lerp(meshRef.current.position.x, -0.5, 0.05);
+      meshRef.current.position.x = Math.sin(state.clock.elapsedTime * 60) * 0.1;
+      meshRef.current.position.z = Math.cos(state.clock.elapsedTime * 60) * 0.1;
     } else {
-      // Return to normal
       meshRef.current.position.x = THREE.MathUtils.lerp(meshRef.current.position.x, 0, 0.1);
-      meshRef.current.position.y = THREE.MathUtils.lerp(meshRef.current.position.y, -2.8, 0.1);
       meshRef.current.position.z = THREE.MathUtils.lerp(meshRef.current.position.z, 0, 0.1);
-      meshRef.current.rotation.z = THREE.MathUtils.lerp(meshRef.current.rotation.z, 0, 0.1);
+    }
+
+    if (simulationResult === 'collapsed') {
+      meshRef.current.rotation.x = THREE.MathUtils.lerp(meshRef.current.rotation.x, Math.PI * 0.1, 0.1);
+      meshRef.current.position.y = THREE.MathUtils.lerp(meshRef.current.position.y, -3.5, 0.1);
+    } else {
       meshRef.current.rotation.x = THREE.MathUtils.lerp(meshRef.current.rotation.x, 0, 0.1);
+      meshRef.current.position.y = THREE.MathUtils.lerp(meshRef.current.position.y, -2.5, 0.1);
     }
   });
 
@@ -199,7 +196,7 @@ function OmoHadaModel({ isShaking, simulationResult }: { isShaking?: boolean, si
     <primitive 
       ref={meshRef} 
       object={scene} 
-      scale={4.8} 
+      scale={5.5} 
       position={[0, -2.5, 0]} 
       dispose={null}
     />
@@ -207,7 +204,24 @@ function OmoHadaModel({ isShaking, simulationResult }: { isShaking?: boolean, si
 }
 
 // Preload for better experience
-useGLTF.preload('/Copilot3D-6a753cf7-a08a-4c62-92e0-84fac9ae7946.glb');
+useGLTF.preload('/Copilot3D-6a753cf7-a08a-4c62-92e0-84fac9ae7946.glb', 'https://www.gstatic.com/draco/versioned/decoders/1.5.5/');
+
+function Loader() {
+  const { progress } = useProgress();
+  return (
+    <Html center>
+      <div className="flex flex-col items-center justify-center">
+        <div className="w-8 h-8 border-2 border-nias-gold border-t-transparent rounded-full animate-spin mb-4" />
+        <p className="text-stone-900 font-black text-[9px] uppercase tracking-[0.2em] whitespace-nowrap mb-1">
+          MEMUAT STRUKTUR...
+        </p>
+        <p className="text-nias-gold font-bold text-[10px] tabular-nums">
+          {progress.toFixed(0)}%
+        </p>
+      </div>
+    </Html>
+  );
+}
 
 function House3DViewer({ isShaking, simulationResult }: { isShaking?: boolean, simulationResult?: 'steady' | 'collapsed' | null }) {
   return (
@@ -220,31 +234,26 @@ function House3DViewer({ isShaking, simulationResult }: { isShaking?: boolean, s
       <ErrorBoundary>
         <Canvas 
           shadows 
-          dpr={[1, 1.5]}
+          dpr={[1, 2]}
           gl={{ 
             antialias: true, 
             alpha: true,
-            powerPreference: "high-performance"
+            powerPreference: "high-performance",
+            toneMappingExposure: 1.8
           }}
           className="touch-none"
         >
-          <PerspectiveCamera makeDefault position={[7, 4, 7]} fov={40} />
-          <ambientLight intensity={2.5} />
-          <pointLight position={[10, 10, 10]} intensity={3} />
-          <pointLight position={[-10, 5, -10]} intensity={1.5} />
+          <PerspectiveCamera makeDefault position={[8, 5, 8]} fov={35} />
           
-          <Suspense fallback={
-            <Html center>
-              <div className="flex flex-col items-center justify-center">
-                <div className="w-6 h-6 border-2 border-nias-gold border-t-transparent rounded-full animate-spin mb-3" />
-                <p className="text-stone-900 font-black text-[7px] uppercase tracking-[0.2em] whitespace-nowrap">
-                  MEMUAT...
-                </p>
-              </div>
-            </Html>
-          }>
+          {/* Pencahayaan Sangat Terang */}
+          <ambientLight intensity={4} />
+          <directionalLight position={[10, 20, 10]} intensity={5} castShadow />
+          <directionalLight position={[-10, 15, -10]} intensity={3} />
+          <pointLight position={[0, -10, 0]} intensity={2} color="#fff1cc" />
+          
+          <Suspense fallback={<Loader />}>
             <OmoHadaModel isShaking={isShaking} simulationResult={simulationResult} />
-            <ContactShadows position={[0, -2.8, 0]} opacity={0.4} scale={10} blur={2} far={4.5} />
+            <ContactShadows position={[0, -2.8, 0]} opacity={0.6} scale={15} blur={2.5} far={4} />
           </Suspense>
   
           <OrbitControls 
@@ -266,7 +275,20 @@ function House3DViewer({ isShaking, simulationResult }: { isShaking?: boolean, s
 type Page = 'dashboard' | 'mindful' | 'meaningful' | 'joyful' | 'mitigasi';
 
 export default function App() {
-  const [currentPage, setCurrentPage] = useState<Page>('dashboard');
+  const [currentPage, setCurrentPage] = useState<Page>(() => {
+    const saved = localStorage.getItem('nias_current_page');
+    // Validate that the saved value is a valid Page
+    const validPages: Page[] = ['dashboard', 'mindful', 'meaningful', 'joyful', 'mitigasi'];
+    if (saved && validPages.includes(saved as Page)) {
+      return saved as Page;
+    }
+    return 'dashboard';
+  });
+
+  useEffect(() => {
+    localStorage.setItem('nias_current_page', currentPage);
+  }, [currentPage]);
+
   const [isShaking, setIsShaking] = useState(false);
 
   const navItems = [
@@ -333,7 +355,7 @@ function DashboardPage({ onSelect }: { onSelect: (p: Page) => void }) {
 
   const modules: ModuleItem[] = [
     { id: 'mindful', title: 'Mindful', subtitle: 'Sejarah & Tragedi', icon: Heart, color: 'bg-brick-red', des: 'Pahami luka masa lalu & kearifan lokal.' },
-    { id: 'meaningful', title: 'Meaningful', subtitle: 'Anatomi Etnosains', icon: Lightbulb, color: 'bg-nias-gold', des: 'Rahasia struktur tahan gempa Omo Hada.' },
+    { id: 'meaningful', title: 'Meaningful', subtitle: 'Anatomi Omo Hada', icon: Lightbulb, color: 'bg-nias-gold', des: 'Rahasia struktur tahan gempa Omo Hada.' },
     { id: 'joyful', title: 'Joyful', subtitle: 'Simulasi Gempa', icon: Gamepad2, color: 'bg-wood-dark', des: 'Uji ketahanan desainmu secara interaktif.' },
     { id: 'mitigasi', title: 'Mitigasi', subtitle: 'Aksi Penyelamatan', icon: ShieldAlert, color: 'bg-stone-600', des: 'Pelajari langkah siaga saat darurat.' }
   ];
@@ -451,19 +473,35 @@ function MeaningfulPage() {
   const anatomyDetails = {
     ehomo: {
       title: "Ehomo (Pondasi Batu)",
-      desc: "Tiang kayu tidak ditanam di tanah, tapi diletakkan di atas batu datar."
+      desc: "Tiang kayu tidak ditanam di tanah, tapi diletakkan di atas batu datar (Pondasi Terapung).",
+      science: "Konsep Inersia (Hukum I Newton): Karena rumah tidak 'diikat' ke tanah, saat tanah bergerak gempa mendatar, rumah cenderung mempertahankan posisinya. Rumah hanya 'bergeser' di atas batu, bukan patah."
     },
     diwa: {
       title: "Diwa (Tiang Menyilang)",
-      desc: "Kayu dipasang menyilang membentuk huruf 'X'."
+      desc: "Kayu dipasang menyilang membentuk huruf 'X' yang saling mengunci.",
+      science: "Konsep Elastisitas: Tiang menyilang (Diwa) bersifat elastis. Saat energi gempa masuk, sambungan ini bergerak fleksibel untuk menyerap energi (Disipasi Energi), mendistribusikan beban secara merata."
     },
     paku: {
       title: "Tanpa Paku",
-      desc: "Seluruh sambungan menggunakan sistem pasak kayu (lubang dan pengunci)."
+      desc: "Seluruh sambungan menggunakan sistem pasak (lubang dan pengunci).",
+      science: "Sistem Sambungan Fleksibel: Mengurangi tegangan kaku. Berdasarkan rumus F = m × a, percepatan gempa menghasilkan gaya besar, namun diredam oleh fleksibilitas sambungan kayu."
     }
   };
 
-  const [activeModal, setActiveModal] = useState<keyof typeof anatomyDetails | null>('ehomo');
+  const [activeModal, setActiveModal] = useState<keyof typeof anatomyDetails | null>(() => {
+    const saved = localStorage.getItem('nias_meaningful_modal');
+    if (saved && Object.keys(anatomyDetails).includes(saved)) {
+      return saved as keyof typeof anatomyDetails;
+    }
+    return 'ehomo';
+  });
+  const [activeTab, setActiveTab] = useState<'etno' | 'science'>('etno');
+
+  useEffect(() => {
+    if (activeModal) {
+      localStorage.setItem('nias_meaningful_modal', activeModal);
+    }
+  }, [activeModal]);
 
   const playKnock = () => {
     try {
@@ -479,7 +517,7 @@ function MeaningfulPage() {
     <div className="flex flex-col h-full bg-cream-bg min-h-[600px] font-sans">
       <header className="p-6 text-center relative border-b border-stone-200/50">
         <h2 className="text-xl font-black text-stone-900 tracking-tighter uppercase italic">
-          Anatomi Etnosains<br/>
+          Anatomi Omo Hada<br/>
           <span className="text-xs font-bold block text-brick-red tracking-widest">(Rahasia Struktur)</span>
         </h2>
         <div className="absolute top-6 right-6">
@@ -533,23 +571,87 @@ function MeaningfulPage() {
                 initial={{ opacity: 0, scale: 0.95 }}
                 animate={{ opacity: 1, scale: 1 }}
                 exit={{ opacity: 0, scale: 0.95 }}
-                className="bg-white rounded-[40px] p-8 shadow-2xl relative border-2 border-stone-100 mb-8"
+                className="bg-white rounded-[40px] shadow-2xl relative border-2 border-stone-100 mb-8 overflow-hidden"
               >
-                <div className="absolute -top-4 left-1/2 -translate-x-1/2 w-0 h-0 border-l-[20px] border-l-transparent border-r-[20px] border-r-transparent border-b-[20px] border-b-white" />
-                
-                <div className="flex flex-col gap-4">
-                  <div className="flex items-center gap-3">
-                    <div className="w-4 h-4 rounded-full bg-nias-gold shadow-sm" />
-                    <h3 className="text-2xl font-black text-stone-900 tracking-tighter italic uppercase">
-                      {anatomyDetails[activeModal].title}
-                    </h3>
-                  </div>
-                  <div className="space-y-2">
-                    <p className="text-brick-red font-black text-[10px] uppercase tracking-[0.2em] opacity-50">Mengapa Ini Penting?</p>
-                    <p className="text-stone-800 text-lg leading-snug font-bold">
-                      {anatomyDetails[activeModal].desc}
-                    </p>
-                  </div>
+                {/* Tab Controller */}
+                <div className="flex p-2 bg-stone-100 m-4 rounded-[32px]">
+                  <button 
+                    onClick={() => setActiveTab('etno')}
+                    className={`flex-1 py-3.5 rounded-[28px] font-black text-[10px] uppercase tracking-widest transition-all flex items-center justify-center gap-2 ${
+                      activeTab === 'etno' ? 'bg-white text-brick-red shadow-md' : 'text-stone-400'
+                    }`}
+                  >
+                    <BookOpen size={16} />
+                    Etnosains
+                  </button>
+                  <button 
+                    onClick={() => setActiveTab('science')}
+                    className={`flex-1 py-3.5 rounded-[28px] font-black text-[10px] uppercase tracking-widest transition-all flex items-center justify-center gap-2 ${
+                      activeTab === 'science' ? 'bg-stone-900 text-nias-gold shadow-md' : 'text-stone-400'
+                    }`}
+                  >
+                    <Zap size={16} />
+                    Sains Modern
+                  </button>
+                </div>
+
+                <div className="p-8 pt-4">
+                  <AnimatePresence mode="wait">
+                    {activeTab === 'etno' ? (
+                      <motion.div
+                        key="etno"
+                        initial={{ opacity: 0, x: -10 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        exit={{ opacity: 0, x: 10 }}
+                        className="space-y-4"
+                      >
+                        <div className="flex items-center gap-3">
+                          <div className="w-4 h-4 rounded-full bg-brick-red" />
+                          <h3 className="text-2xl font-black text-stone-900 tracking-tighter uppercase italic">{anatomyDetails[activeModal].title}</h3>
+                        </div>
+                        <div className="space-y-1">
+                          <p className="text-brick-red font-black text-[10px] uppercase tracking-[0.2em] opacity-40">Filosofi Tradisional</p>
+                          <p className="text-stone-800 text-lg leading-snug font-bold">
+                            {anatomyDetails[activeModal].desc}
+                          </p>
+                        </div>
+                      </motion.div>
+                    ) : (
+                      <motion.div
+                        key="science"
+                        initial={{ opacity: 0, x: 10 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        exit={{ opacity: 0, x: -10 }}
+                        className="space-y-5"
+                      >
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-3">
+                            <div className="w-1.5 h-6 bg-nias-gold rounded-full" />
+                            <h3 className="text-xl font-black text-stone-900 tracking-tight uppercase">Technical Deep Dive</h3>
+                          </div>
+                          {activeModal === 'paku' && (
+                            <div className="bg-stone-900 px-3 py-1.5 rounded-xl border border-stone-700">
+                              <span className="font-mono font-black text-nias-gold text-xs tracking-widest">F = m × a</span>
+                            </div>
+                          )}
+                        </div>
+                        
+                        <div className="bg-stone-900 rounded-[32px] p-6 shadow-xl border border-stone-800 group h-full">
+                          <p className="text-stone-300 text-xs leading-relaxed font-medium italic">
+                            {anatomyDetails[activeModal].science}
+                          </p>
+                          <div className="mt-4 pt-4 border-t border-white/5 flex items-center justify-between">
+                            <span className="text-white/20 text-[9px] font-black uppercase tracking-widest">Structural Engineering</span>
+                            <div className="flex gap-1">
+                              <div className="w-1 h-1 bg-nias-gold/40 rounded-full" />
+                              <div className="w-1 h-1 bg-nias-gold/60 rounded-full" />
+                              <div className="w-1 h-1 bg-nias-gold/80 rounded-full" />
+                            </div>
+                          </div>
+                        </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
                 </div>
               </motion.div>
             )}
@@ -630,9 +732,16 @@ function HouseSVGViewer({ isShaking, simulationResult }: { isShaking?: boolean, 
 }
 
 function JoyfulPage({ isShaking, setIsShaking }: { isShaking: boolean, setIsShaking: (v: boolean) => void }) {
-  const [pondasi, setPondasi] = useState<string>('');
-  const [sambungan, setSambungan] = useState<string>('');
-  const [simulationResult, setSimulationResult] = useState<'steady' | 'collapsed' | null>(null);
+  const [pondasi, setPondasi] = useState<string>(() => localStorage.getItem('nias_joyful_pondasi') || '');
+  const [sambungan, setSambungan] = useState<string>(() => localStorage.getItem('nias_joyful_sambungan') || '');
+  const [simulationResult, setSimulationResult] = useState<'steady' | 'collapsed' | null>(() => {
+    const saved = localStorage.getItem('nias_joyful_result');
+    return (saved === 'steady' || saved === 'collapsed') ? saved : null;
+  });
+
+  useEffect(() => { localStorage.setItem('nias_joyful_pondasi', pondasi); }, [pondasi]);
+  useEffect(() => { localStorage.setItem('nias_joyful_sambungan', sambungan); }, [sambungan]);
+  useEffect(() => { localStorage.setItem('nias_joyful_result', simulationResult || ''); }, [simulationResult]);
 
   const handleSimulate = () => {
     if (!pondasi || !sambungan) return;
