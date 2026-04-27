@@ -3,15 +3,17 @@
 
 @theme {
   --font-sans: "Plus Jakarta Sans", ui-sans-serif, system-ui, sans-serif;
-  --color-wood-dark: #5D4037;
+  --color-wood-dark: #3E2723;
   --color-wood-light: #D7CCC8;
-  --color-brick-red: #B71C1C;
+  --color-brick-red: #721010;
+  --color-cream-bg: #F9F3E5;
+  --color-nias-gold: #FFD700;
   --color-earth-bg: #FDFBF7;
 }
 
 @layer base {
   body {
-    @apply bg-earth-bg text-stone-900 font-sans;
+    @apply bg-cream-bg text-stone-900 font-sans;
     overscroll-behavior-y: none;
   }
 }

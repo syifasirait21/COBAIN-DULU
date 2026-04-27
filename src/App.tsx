@@ -168,7 +168,7 @@ export default function App() {
       </main>
 
       {/* Bottom Navigation */}
-      <nav className="bg-white border-t border-stone-200 h-16 flex items-center justify-around fixed bottom-0 w-full max-w-md z-50">
+      <nav className="bg-cream-bg/95 backdrop-blur-md border-t border-stone-200 h-16 flex items-center justify-around fixed bottom-0 w-full max-w-md z-50 shadow-[0_-5px_15px_rgba(0,0,0,0.05)]">
         {navItems.map((item) => {
           const Icon = item.icon;
           const isActive = currentPage === item.id;
@@ -198,10 +198,10 @@ export default function App() {
 
 function DashboardPage({ onSelect }: { onSelect: (p: Page) => void }) {
   const modules = [
-    { id: 'mindful', title: 'Mindful', subtitle: 'Sejarah & Tragedi', icon: Heart, color: 'bg-red-500', des: 'Pahami luka masa lalu & kearifan lokal.' },
-    { id: 'meaningful', title: 'Meaningful', subtitle: 'Anatomi Etnosains', icon: Lightbulb, color: 'bg-yellow-500', des: 'Rahasia struktur tahan gempa Omo Hada.' },
-    { id: 'joyful', title: 'Joyful', subtitle: 'Simulasi Gempa', icon: Gamepad2, color: 'bg-blue-500', des: 'Uji ketahanan desainmu secara interaktif.' },
-    { id: 'mitigasi', title: 'Mitigasi', subtitle: 'Aksi Penyelamatan', icon: ShieldAlert, color: 'bg-green-600', des: 'Pelajari langkah siaga saat darurat.' }
+    { id: 'mindful', title: 'Mindful', subtitle: 'Sejarah & Tragedi', icon: Heart, color: 'bg-brick-red', des: 'Pahami luka masa lalu & kearifan lokal.' },
+    { id: 'meaningful', title: 'Meaningful', subtitle: 'Anatomi Etnosains', icon: Lightbulb, color: 'bg-nias-gold', iconColor: 'text-stone-900', des: 'Rahasia struktur tahan gempa Omo Hada.' },
+    { id: 'joyful', title: 'Joyful', subtitle: 'Simulasi Gempa', icon: Gamepad2, color: 'bg-wood-dark', des: 'Uji ketahanan desainmu secara interaktif.' },
+    { id: 'mitigasi', title: 'Mitigasi', subtitle: 'Aksi Penyelamatan', icon: ShieldAlert, color: 'bg-stone-600', des: 'Pelajari langkah siaga saat darurat.' }
   ];
 
   return (
@@ -212,10 +212,10 @@ function DashboardPage({ onSelect }: { onSelect: (p: Page) => void }) {
     >
       <header className="space-y-2 mt-4">
         <h1 className="text-4xl font-black text-wood-dark tracking-tighter leading-none">
-          Halo, <br/>
-          <span className="text-brick-red">Petualang!</span>
+          Ya'ahowu, <br/>
+          <span className="text-brick-red">Nono Niha!</span>
         </h1>
-        <p className="text-stone-500 text-sm font-bold leading-tight">
+        <p className="text-stone-600 text-sm font-bold leading-tight">
           Mari belajar ketangguhan dari leluhur Nias melalui 4 fase penting.
         </p>
       </header>
@@ -232,11 +232,11 @@ function DashboardPage({ onSelect }: { onSelect: (p: Page) => void }) {
               onClick={() => onSelect(m.id as Page)}
               className="group flex flex-col items-start p-6 bg-white rounded-[32px] shadow-sm hover:shadow-xl transition-all border border-stone-100 text-left relative overflow-hidden"
             >
-              <div className={`${m.color} p-3 rounded-2xl text-white mb-4 group-hover:scale-110 transition-transform`}>
+              <div className={`${m.color} p-3 rounded-2xl ${m.id === 'meaningful' ? 'text-stone-900' : 'text-white'} mb-4 group-hover:scale-110 transition-transform`}>
                 <Icon size={24} />
               </div>
               <div className="space-y-1">
-                <span className="text-[10px] uppercase font-black tracking-widest text-stone-400">{m.subtitle}</span>
+                <span className="text-[10px] uppercase font-black tracking-widest text-stone-400">{(m as any).subtitle}</span>
                 <h3 className="text-xl font-black text-stone-800">{m.title}</h3>
                 <p className="text-xs text-stone-500 font-bold leading-relaxed">{m.des}</p>
               </div>
@@ -248,8 +248,8 @@ function DashboardPage({ onSelect }: { onSelect: (p: Page) => void }) {
         })}
       </div>
 
-      <div className="bg-wood-dark/5 p-6 rounded-[32px] border-2 border-wood-dark/10 border-dashed text-center">
-        <p className="text-xs font-bold text-wood-dark/60">
+      <div className="bg-brick-red/5 p-6 rounded-[32px] border-2 border-brick-red/10 border-dashed text-center">
+        <p className="text-xs font-bold text-brick-red/60 uppercase tracking-tighter">
           "Kearifan lokal adalah tameng kita di masa depan."
         </p>
       </div>
@@ -266,32 +266,34 @@ function MindfulPage({ onNext }: { onNext: () => void }) {
       className="p-6 space-y-6"
     >
       <header className="space-y-2">
-        <span className="text-brick-red font-bold text-xs uppercase tracking-widest">Sejarah & Tragedi</span>
-        <h1 className="text-3xl font-bold text-wood-dark leading-tight">Maret 2005,<br />Nias Berguncang</h1>
+        <div className="flex border-b-2 border-dashed border-stone-200 pb-2 mb-4">
+          <span className="text-brick-red font-black text-[10px] uppercase tracking-[0.2em] italic">Sejarah & Tragedi</span>
+        </div>
+        <h1 className="text-3xl font-black text-stone-900 tracking-tighter leading-none uppercase italic">Maret 2005,<br />Nias Berguncang</h1>
       </header>
 
-      <div className="relative aspect-video bg-stone-200 rounded-2xl overflow-hidden group">
-        <div className="absolute inset-0 flex items-center justify-center bg-black/20 group-hover:bg-black/30 transition-colors">
-          <div className="w-16 h-16 bg-white/90 rounded-full flex items-center justify-center text-brick-red shadow-lg transform group-hover:scale-110 transition-transform">
+      <div className="relative aspect-video bg-stone-900 rounded-[32px] overflow-hidden group shadow-2xl border-4 border-white">
+        <div className="absolute inset-0 flex items-center justify-center bg-brick-red/20 group-hover:bg-brick-red/30 transition-colors z-10">
+          <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center text-brick-red shadow-2xl transform group-hover:scale-110 transition-transform">
             <Play fill="currentColor" className="ml-1" />
           </div>
         </div>
         <img 
           src="https://images.unsplash.com/photo-1547841022-b558accc7ef8?q=80&w=1000&auto=format&fit=crop" 
           alt="History of Nias" 
-          className="w-full h-full object-cover opacity-60"
+          className="w-full h-full object-cover opacity-50 contrast-125 grayscale"
         />
-        <div className="absolute bottom-4 left-4 right-4 text-white text-xs bg-black/40 p-2 rounded backdrop-blur-sm">
-          Placeholder Video: Dokumentasi Gempa Nias 2005
+        <div className="absolute bottom-4 left-4 right-4 text-white text-[10px] font-black uppercase tracking-widest bg-black/40 p-2 rounded-xl backdrop-blur-sm z-20">
+          Dokumentasi Gempa Nias 2005
         </div>
       </div>
 
-      <div className="space-y-4 text-stone-700 leading-relaxed text-sm">
+      <div className="space-y-4 text-stone-800 leading-relaxed text-sm font-medium">
         <p>
           Bumi berguncang hebat di tengah malam. Di pusat kota, bangunan beton tinggi runtuh menjadi puing dalam sekejap. Isak tangis terdengar di mana-mana.
         </p>
-        <div className="bg-wood-light/30 p-4 rounded-xl border border-wood-light/50 border-l-4 border-l-wood-dark">
-          <p className="italic font-medium text-wood-dark">
+        <div className="bg-brick-red/5 p-5 rounded-[24px] border-2 border-brick-red/10 border-dashed">
+          <p className="italic font-black text-brick-red uppercase tracking-tight text-xs">
             "Namun di pelosok desa, rumah-rumah panggung tua dari kayu justru tetap berdiri tegak, seolah menari mengikuti irama gempa."
           </p>
         </div>
@@ -302,7 +304,7 @@ function MindfulPage({ onNext }: { onNext: () => void }) {
 
       <button 
         onClick={onNext}
-        className="w-full bg-brick-red text-white font-bold py-4 rounded-2xl flex items-center justify-center gap-2 shadow-lg shadow-brick-red/20 active:scale-95 transition-transform"
+        className="w-full bg-brick-red text-white font-black py-5 rounded-[24px] flex items-center justify-center gap-3 shadow-2xl shadow-brick-red/30 active:scale-95 transition-transform uppercase tracking-widest text-xs border-b-4 border-red-900"
       >
         Selidiki Rahasianya
         <ChevronRight size={18} />
@@ -324,98 +326,95 @@ function MeaningfulPage() {
       desc: "Kayu dipasang menyilang membentuk huruf 'X'."
     },
     paku: {
-      title: "Tanpa Paku",
-      desc: "Seluruh sambungan menggunakan sistem pasak kayu (lubang dan pengunci)."
+      title: "Paku (Lentur)",
+      desc: "Seluruh sambungan menggunakan sistem pasak kayu yang sangat lentur."
     }
   };
 
   const playKnock = () => {
-    const audio = new Audio('https://assets.mixkit.co/active_storage/sfx/2568/2568-preview.mp3');
-    audio.volume = 0.4;
-    audio.play().catch(() => {});
+    try {
+      const audio = new Audio('https://assets.mixkit.co/active_storage/sfx/2568/2568-preview.mp3');
+      audio.volume = 0.4;
+      audio.play().catch(() => {});
+    } catch (e) {
+      console.warn("Audio play failed", e);
+    }
   };
 
   return (
-    <div className="flex flex-col h-full bg-[#F5E6D3] min-h-[600px] font-sans">
-      <header className="p-6 text-center relative">
-        <h2 className="text-xl font-black text-stone-800 leading-tight">
-          Fase MEANINGFUL - Bagian A<br/>
-          <span className="text-lg font-bold block">(Anatomi Etnosains)</span>
+    <div className="flex flex-col h-full bg-cream-bg min-h-[600px] font-sans">
+      <header className="p-6 text-center relative border-b border-stone-200/50">
+        <h2 className="text-xl font-black text-stone-900 tracking-tighter uppercase italic">
+          Anatomi Etnosains<br/>
+          <span className="text-xs font-bold block text-brick-red tracking-widest">(Rahasia Struktur)</span>
         </h2>
         <div className="absolute top-6 right-6">
-          <button onClick={playKnock} className="bg-white p-3 rounded-full shadow-lg text-stone-600 active:scale-95 transition-transform border border-stone-100">
+          <button onClick={playKnock} className="bg-white p-3 rounded-full shadow-lg text-brick-red active:scale-95 transition-transform border border-stone-100">
             <Volume2 size={24} />
           </button>
         </div>
       </header>
 
-      <div className="flex-1 relative flex flex-col items-center pb-8 px-6">
+      <div className="flex-1 relative flex flex-col items-center pb-8 px-6 pt-6 overflow-y-auto">
         <div className="w-full max-w-md flex flex-col gap-6">
-          {/* Main 3D Viewer Area - Cleaned up */}
-          <div className="relative w-full aspect-square bg-stone-50 rounded-[40px] overflow-hidden border-2 border-stone-200 shadow-inner group">
-            <House3DViewer />
-            <div className="absolute top-4 left-1/2 -translate-x-1/2 bg-white/80 backdrop-blur-sm px-4 py-1.5 rounded-full border border-stone-200 text-[10px] font-black text-stone-500 uppercase tracking-widest pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity">
-              Slide untuk putar • Zoom untuk detail
-            </div>
-            {/* Minimal Indicators */}
-            <div className="absolute inset-x-2 top-1/2 -translate-y-1/2 flex justify-between pointer-events-none text-stone-300/50">
-              <RefreshCcw size={24} className="rotate-90" />
-              <RefreshCcw size={24} className="-rotate-90 scale-x-[-1]" />
+          {/* Main 3D Viewer Area */}
+          <div className="relative w-full aspect-[4/3] bg-stone-900 rounded-[40px] overflow-hidden border-2 border-white shadow-2xl group ring-1 ring-stone-200">
+            <Suspense fallback={
+              <div className="w-full h-full flex items-center justify-center text-white font-black text-xs uppercase tracking-widest animate-pulse">
+                Memuat Model 3D...
+              </div>
+            }>
+              <House3DViewer />
+            </Suspense>
+            <div className="absolute top-4 left-1/2 -translate-x-1/2 bg-white/90 backdrop-blur-sm px-4 py-1.5 rounded-full border border-stone-200 text-[10px] font-black text-stone-500 uppercase tracking-widest pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity">
+              Slide putar • Zoom detail
             </div>
           </div>
 
-          {/* External Point Selector Buttons */}
           <div className="grid grid-cols-3 gap-3">
             {[
               { id: 'ehomo', label: 'Ehomo', point: 'Poin 1' },
               { id: 'diwa', label: 'Diwa', point: 'Poin 2' },
-              { id: 'paku', label: 'Tanpa Paku', point: 'Poin 3' }
+              { id: 'paku', label: 'Lentur', point: 'Poin 3' }
             ].map((item) => (
               <button
                 key={item.id}
                 onClick={() => { playKnock(); setActiveModal(item.id as any); }}
-                className={`py-4 px-2 rounded-2xl flex flex-col items-center transition-all border-2 ${
+                className={`py-4 px-2 rounded-[24px] flex flex-col items-center transition-all border-2 ${
                   activeModal === item.id 
-                    ? 'bg-wood-dark border-wood-dark text-white shadow-lg scale-105' 
-                    : 'bg-white border-stone-200 text-stone-400 hover:border-stone-300 active:scale-95'
+                    ? 'bg-brick-red border-brick-red text-white shadow-xl scale-105 ring-4 ring-brick-red/20' 
+                    : 'bg-white border-stone-100 text-stone-400 hover:border-stone-200 active:scale-95'
                 }`}
               >
-                <span className="text-[10px] font-black uppercase mb-1 opacity-60 tracking-wider font-mono">{item.point}</span>
-                <span className="text-xs font-black tracking-tight leading-tight text-center">{item.label}</span>
+                <span className="text-[10px] font-black uppercase mb-1 opacity-60 tracking-wider">{(item as any).point}</span>
+                <span className="text-xs font-black tracking-tight leading-tight text-center">{(item as any).label}</span>
               </button>
             ))}
           </div>
 
-          {/* Explanation Bubble */}
           <AnimatePresence mode="wait">
             {activeModal && (
               <motion.div 
                 key={activeModal}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: 10 }}
-                className="bg-white rounded-[40px] p-8 shadow-2xl relative"
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.95 }}
+                className="bg-white rounded-[40px] p-8 shadow-2xl relative border-2 border-stone-100 mb-8"
               >
-                {/* Bubble Tip */}
                 <div className="absolute -top-4 left-1/2 -translate-x-1/2 w-0 h-0 border-l-[20px] border-l-transparent border-r-[20px] border-r-transparent border-b-[20px] border-b-white" />
                 
-                <div className="flex justify-between gap-4">
-                  <div className="space-y-4 w-full">
-                    <div className="flex items-center gap-3">
-                      <div className="w-3 h-3 rounded-full bg-brick-red animate-pulse" />
-                      <h3 className="text-2xl font-black text-stone-800 tracking-tight leading-none">
-                        {anatomyDetails[activeModal].title}
-                      </h3>
-                    </div>
-                    <div className="space-y-1">
-                      <p className="text-stone-400 font-black text-[10px] uppercase tracking-[0.2em]">Keterangan Struktur:</p>
-                      <p className="text-stone-700 text-lg leading-snug font-bold">
-                        {anatomyDetails[activeModal].desc}
-                      </p>
-                    </div>
+                <div className="flex flex-col gap-4">
+                  <div className="flex items-center gap-3">
+                    <div className="w-4 h-4 rounded-full bg-nias-gold shadow-sm" />
+                    <h3 className="text-2xl font-black text-stone-900 tracking-tighter italic uppercase">
+                      {anatomyDetails[activeModal as keyof typeof anatomyDetails].title}
+                    </h3>
                   </div>
-                  <div className="bg-stone-100 p-3 rounded-full text-stone-400 shrink-0 self-start lg:hidden">
-                    <Volume2 size={24} />
+                  <div className="space-y-2">
+                    <p className="text-brick-red font-black text-[10px] uppercase tracking-[0.2em] opacity-50">Mengapa Ini Penting?</p>
+                    <p className="text-stone-800 text-lg leading-snug font-bold">
+                      {anatomyDetails[activeModal as keyof typeof anatomyDetails].desc}
+                    </p>
                   </div>
                 </div>
               </motion.div>
@@ -533,20 +532,20 @@ function JoyfulPage({ isShaking, setIsShaking }: { isShaking: boolean, setIsShak
     const isSelected = type === 'pondasi' ? pondasi === value : sambungan === value;
     if (!isSelected) return 'border-white bg-white/50 text-stone-400';
     
-    // Vibrant colors for selection
-    return 'border-yellow-400 bg-yellow-400 text-stone-900 shadow-xl scale-[1.05] ring-4 ring-yellow-400/20';
+    // Heritage gold for selection
+    return 'border-nias-gold bg-nias-gold text-stone-900 shadow-xl scale-[1.05] ring-4 ring-nias-gold/20';
   };
 
   return (
-    <div className={`p-6 space-y-8 flex flex-col items-center min-h-[600px] bg-gradient-to-b from-blue-50 to-white ${isShaking ? 'animate-earthquake' : ''}`}>
+    <div className={`p-6 space-y-8 flex flex-col items-center min-h-[600px] bg-cream-bg ${isShaking ? 'animate-earthquake' : ''}`}>
       <div className="text-center space-y-2">
-        <h2 className="text-4xl font-black text-blue-900 tracking-tighter uppercase italic drop-shadow-sm">Guncang Nias!</h2>
-        <p className="text-blue-600/60 text-sm font-bold">Uji rahasia bangunan anti-gempa.</p>
+        <h2 className="text-4xl font-black text-brick-red tracking-tighter uppercase italic drop-shadow-sm">Guncang Nias!</h2>
+        <p className="text-brick-red/60 text-[10px] font-black uppercase tracking-[0.2em]">Uji rahasia bangunan anti-gempa.</p>
       </div>
 
       <div className="w-full space-y-6">
         <div className="space-y-3">
-          <label className="text-[10px] font-black uppercase text-blue-400 tracking-wider px-2">A. Pilih Jenis Pondasi</label>
+          <label className="text-[10px] font-black uppercase text-brick-red/40 tracking-wider px-2">A. Pilih Jenis Pondasi</label>
           <div className="flex gap-2">
             <button 
               onClick={() => { if(!isShaking) { setPondasi('semen'); setSimulationResult(null); }}}
@@ -566,7 +565,7 @@ function JoyfulPage({ isShaking, setIsShaking }: { isShaking: boolean, setIsShak
         </div>
 
         <div className="space-y-3">
-          <label className="text-[10px] font-black uppercase text-blue-400 tracking-wider px-2">B. Pilih Teknik Sambungan</label>
+          <label className="text-[10px] font-black uppercase text-brick-red/50 tracking-wider px-2">B. Pilih Teknik Sambungan</label>
           <div className="flex gap-2">
             <button 
               onClick={() => { if(!isShaking) { setSambungan('paku'); setSimulationResult(null); }}}
@@ -814,13 +813,13 @@ function MitigasiPage() {
   const activeItemData = initialItems.find(i => i.id === activeItemId);
 
   return (
-    <div className="p-6 space-y-6 bg-gradient-to-b from-stone-50 to-white min-h-[700px] flex flex-col items-center pb-40">
+    <div className="p-6 space-y-6 bg-cream-bg min-h-[700px] flex flex-col items-center pb-40">
       <div className="text-center space-y-2 w-full">
         <div className="flex justify-center gap-2 mb-2">
-          <span className="px-3 py-1 bg-brick-red/10 text-brick-red text-[10px] font-black rounded-full uppercase tracking-tighter">Fase Mitigasi</span>
+          <span className="px-3 py-1 bg-brick-red text-white text-[10px] font-black rounded-full uppercase tracking-tighter shadow-sm">Fase Mitigasi</span>
         </div>
         <h2 className="text-3xl font-black text-stone-900 tracking-tighter uppercase leading-none italic drop-shadow-sm">Siaga Gempa</h2>
-        <p className="text-stone-500 text-[10px] font-black uppercase tracking-widest leading-relaxed px-4">Tarik aksi ke kolom yang tepat!</p>
+        <p className="text-brick-red/60 text-[10px] font-black uppercase tracking-widest leading-relaxed px-4">Tarik aksi ke kolom yang tepat!</p>
       </div>
 
       <DndContext 
@@ -848,13 +847,13 @@ function MitigasiPage() {
           />
         </div>
 
-        <div className="w-full space-y-4 pt-4 border-t-2 border-stone-100 mt-2">
+        <div className="w-full space-y-4 pt-4 border-t-2 border-stone-200/50 mt-2">
           <div className="flex items-center justify-between px-2">
             <h3 className="text-[10px] font-black text-stone-400 uppercase tracking-widest flex items-center gap-2">
               <MousePointer2 size={12} /> Daftar Aksi
             </h3>
             {pool.length > 0 && (
-              <span className="text-[10px] font-black text-blue-500 bg-blue-50 px-2 py-0.5 rounded-full animate-pulse">{pool.length} Tersisa</span>
+              <span className="text-[10px] font-black text-brick-red bg-brick-red/5 px-2 py-0.5 rounded-full animate-pulse">{pool.length} Tersisa</span>
             )}
           </div>
 
@@ -870,18 +869,18 @@ function MitigasiPage() {
             <motion.div 
               initial={{ scale: 0.9, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
-              className="p-6 bg-blue-50 rounded-[32px] border-2 border-blue-200 border-dashed text-center shadow-inner"
+              className="p-6 bg-brick-red/5 rounded-[32px] border-2 border-brick-red/20 border-dashed text-center shadow-inner"
             >
-              <p className="text-xs font-black text-blue-700 uppercase italic">Semua aksi sudah dipilah!</p>
-              <p className="text-[10px] font-bold text-blue-500 mt-1 uppercase tracking-widest">Silahkan cek jawabanmu.</p>
+              <p className="text-xs font-black text-brick-red uppercase italic">Semua aksi sudah dipilah!</p>
+              <p className="text-[10px] font-bold text-brick-red/50 mt-1 uppercase tracking-widest">Silahkan cek jawabanmu.</p>
             </motion.div>
           )}
         </div>
 
         <DragOverlay zIndex={1000}>
           {activeItemData ? (
-            <div className="p-3 bg-white rounded-2xl border-4 border-blue-500 shadow-2xl flex items-center gap-3 cursor-grabbing scale-110 rotate-3 ring-4 ring-blue-500/20">
-              <div className="w-8 h-8 rounded-lg bg-blue-500 text-white flex items-center justify-center shrink-0">
+            <div className="p-3 bg-white rounded-2xl border-4 border-brick-red shadow-2xl flex items-center gap-3 cursor-grabbing scale-110 rotate-3 ring-4 ring-brick-red/20">
+              <div className="w-8 h-8 rounded-lg bg-brick-red text-white flex items-center justify-center shrink-0">
                 <Grab size={14} />
               </div>
               <span className="text-[10px] font-black text-stone-900 leading-tight">{activeItemData.text}</span>
@@ -920,16 +919,16 @@ function MitigasiPage() {
           <motion.div 
             initial={{ scale: 0.8, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
-            className="w-full p-8 bg-yellow-400 rounded-[40px] border-4 border-yellow-200 text-center space-y-4 shadow-2xl shadow-yellow-200 mt-4"
+            className="w-full p-8 bg-nias-gold rounded-[40px] border-4 border-white text-center space-y-4 shadow-2xl shadow-nias-gold/30 mt-4"
           >
             <div className="w-20 h-20 bg-white rounded-full flex items-center justify-center mx-auto shadow-inner">
-              <ShieldAlert size={40} className="text-yellow-600" />
+              <ShieldAlert size={40} className="text-stone-900" />
             </div>
-            <h3 className="text-2xl font-black text-white uppercase italic tracking-tighter">Ahli Mitigasi!</h3>
-            <p className="text-white font-bold text-xs leading-relaxed uppercase tracking-widest opacity-90">Kamu layak mendapatkan lencana kesiapsiagaan.</p>
+            <h3 className="text-2xl font-black text-stone-900 uppercase italic tracking-tighter">Ahli Mitigasi!</h3>
+            <p className="text-stone-900 font-bold text-xs leading-relaxed uppercase tracking-widest opacity-90">Kamu layak mendapatkan lencana kesiapsiagaan.</p>
             <button 
               onClick={() => alert("Lencana Kesiapsiagaan Nias Berhasil Diklaim! 🏅")}
-              className="w-full py-4 bg-white text-yellow-600 rounded-2xl font-black text-sm shadow-lg active:scale-95 transition-transform"
+              className="w-full py-4 bg-brick-red text-white rounded-2xl font-black text-sm shadow-lg active:scale-95 transition-transform border-b-4 border-red-900"
             >
               KLAIM LENCANA SAYA
             </button>
