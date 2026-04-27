@@ -19,7 +19,6 @@ import {
   RefreshCcw,
   CheckCircle2,
   XCircle,
-  Rotate3d,
   Volume2,
   LayoutGrid,
   Zap,
@@ -27,6 +26,10 @@ import {
   Building2,
   Waves,
   AlertTriangle,
+  Rotate3d,
+  Box,
+  RotateCcw,
+  VolumeX,
   Table,
   DoorOpen,
   EyeOff,
@@ -118,7 +121,7 @@ function NiasAtmosphere() {
 
 // --- Error Boundary for 3D ---
 
-class ErrorBoundary extends React.Component<{ children: React.ReactNode }, { hasError: boolean }> {
+class ErrorBoundary extends React.Component<{ children: React.ReactNode, onFatalError?: () => void }, { hasError: boolean }> {
   constructor(props: any) {
     super(props);
     this.state = { hasError: false };
@@ -144,14 +147,24 @@ class ErrorBoundary extends React.Component<{ children: React.ReactNode }, { has
           </motion.div>
           <p className="text-white font-black text-xs uppercase tracking-widest leading-relaxed mb-6">
             Maaf, Model 3D gagal dimuat.<br/>
-            <span className="opacity-50 font-bold">Tekan tombol untuk mencoba kembali.</span>
+            <span className="opacity-50 font-bold text-[10px]">Perangkat Anda mungkin tidak mendukung WebGL.</span>
           </p>
-          <button 
-            onClick={() => this.setState({ hasError: false })}
-            className="px-6 py-3 bg-nias-gold text-stone-900 rounded-2xl font-black text-[10px] uppercase tracking-[0.2em] shadow-xl active:scale-95 transition-transform"
-          >
-            MUAT ULANG MODEL
-          </button>
+          <div className="flex flex-col gap-3 w-full max-w-[200px]">
+            <button 
+              onClick={() => {
+                this.setState({ hasError: false });
+              }}
+              className="w-full py-3 bg-nias-gold text-stone-900 rounded-2xl font-black text-[10px] uppercase tracking-[0.2em] shadow-xl active:scale-95 transition-transform"
+            >
+              COBA LAGI
+            </button>
+            <button 
+              onClick={() => this.props.onFatalError?.()}
+              className="w-full py-3 bg-stone-700 text-white rounded-2xl font-black text-[10px] uppercase tracking-[0.2em] active:scale-95 transition-transform"
+            >
+              MODE ILUSTRASI
+            </button>
+          </div>
         </div>
       );
     }
@@ -205,6 +218,22 @@ function OmoHadaModel({ isShaking, simulationResult }: { isShaking?: boolean, si
 useGLTF.preload('/Copilot3D-6a753cf7-a08a-4c62-92e0-84fac9ae7946.glb');
 
 function House3DViewer({ isShaking, simulationResult }: { isShaking?: boolean, simulationResult?: 'steady' | 'collapsed' | null }) {
+  const [is3DSupported, setIs3DSupported] = useState(true);
+
+  if (!is3DSupported) {
+    return (
+      <div className="w-full h-full bg-stone-800 flex flex-col items-center justify-center p-8 text-center">
+        <div className="w-24 h-24 bg-nias-gold/20 rounded-full flex items-center justify-center mb-6">
+          <Box size={40} className="text-nias-gold" />
+        </div>
+        <h3 className="text-white font-black text-lg mb-2">MODE ILUSTRASI</h3>
+        <p className="text-stone-400 text-xs font-bold leading-relaxed px-4">
+          Perangkat Anda sedang tidak mendukung penayangan 3D. Gunakan navigasi poin di bawah untuk mempelajari struktur.
+        </p>
+      </div>
+    );
+  }
+
   return (
     <div className="w-full h-full bg-stone-100 rounded-3xl overflow-hidden relative shadow-inner">
       <div className="absolute top-4 left-4 z-10 flex items-center gap-2 bg-white/90 backdrop-blur-sm px-3 py-1.5 rounded-full border border-stone-200 text-stone-500 shadow-sm">
@@ -212,48 +241,40 @@ function House3DViewer({ isShaking, simulationResult }: { isShaking?: boolean, s
         <span className="text-[10px] font-bold uppercase tracking-wider">Model 3D Interaktif</span>
       </div>
       
-      <ErrorBoundary>
+      <ErrorBoundary onFatalError={() => setIs3DSupported(false)}>
         <Canvas 
           shadows 
-          dpr={[1, 2]}
+          dpr={[1, 1.5]}
           gl={{ 
             antialias: true, 
-            alpha: true
+            alpha: true,
+            powerPreference: "high-performance"
           }}
           className="touch-none"
         >
-          <PerspectiveCamera makeDefault position={[4, 2, 4]} fov={38} />
-          <ambientLight intensity={1.8} />
-          <hemisphereLight intensity={1.2} groundColor="#4a4a4a" />
-          <directionalLight position={[10, 15, 10]} intensity={2.5} castShadow />
-          <pointLight position={[-15, 10, -15]} intensity={1.5} />
-          <pointLight position={[0, 5, 5]} intensity={1.5} />
-          <pointLight position={[5, -5, 5]} intensity={0.8} />
+          <PerspectiveCamera makeDefault position={[4, 2, 4]} fov={40} />
+          <ambientLight intensity={1.5} />
+          <pointLight position={[10, 10, 10]} intensity={2} />
+          <pointLight position={[-10, 5, -10]} intensity={1} />
           
           <Suspense fallback={
             <Html center>
-              <div className="flex flex-col items-center justify-center bg-stone-900 p-8 rounded-3xl border border-white/10">
+              <div className="flex flex-col items-center justify-center">
                 <div className="w-8 h-8 border-2 border-nias-gold border-t-transparent rounded-full animate-spin mb-4" />
-                <p className="text-white font-black text-[8px] uppercase tracking-[0.2em] whitespace-nowrap animate-pulse">
-                  Memuat Model 3D...
+                <p className="text-stone-900 font-black text-[8px] uppercase tracking-[0.2em] whitespace-nowrap">
+                  Pemuatan...
                 </p>
               </div>
             </Html>
           }>
             <OmoHadaModel isShaking={isShaking} simulationResult={simulationResult} />
-            <ContactShadows position={[0, -2, 0]} opacity={0.6} scale={15} blur={2.5} far={4} />
-            <Environment preset="city" />
           </Suspense>
   
           <OrbitControls 
             enablePan={false} 
             enableZoom={true}
-            enableDamping={true}
-            dampingFactor={0.05}
-            minDistance={1.5} 
-            maxDistance={12}
-            autoRotate={false}
-            autoRotateSpeed={0.8}
+            minDistance={2} 
+            maxDistance={10}
           />
         </Canvas>
       </ErrorBoundary>
