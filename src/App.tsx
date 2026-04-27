@@ -163,7 +163,9 @@ class ErrorBoundary extends React.Component<{ children: React.ReactNode }, { has
 
 function OmoHadaModel({ isShaking, simulationResult }: { isShaking?: boolean, simulationResult?: 'steady' | 'collapsed' | null }) {
   const meshRef = useRef<THREE.Group>(null);
-  const { scene } = useGLTF('/Copilot3D-6a753cf7-a08a-4c62-92e0-84fac9ae7946.glb');
+  
+  // Try to load the GLTF model. If it fails, the ErrorBoundary will catch it.
+  const { scene } = useGLTF('Copilot3D-6a753cf7-a08a-4c62-92e0-84fac9ae7946.glb');
 
   useFrame((state) => {
     if (!meshRef.current) return;
@@ -199,7 +201,8 @@ function OmoHadaModel({ isShaking, simulationResult }: { isShaking?: boolean, si
   );
 }
 
-useGLTF.preload('/Copilot3D-6a753cf7-a08a-4c62-92e0-84fac9ae7946.glb');
+// No preload for now to see if it helps with initial load issues
+// useGLTF.preload('Copilot3D-6a753cf7-a08a-4c62-92e0-84fac9ae7946.glb');
 
 function House3DViewer({ isShaking, simulationResult }: { isShaking?: boolean, simulationResult?: 'steady' | 'collapsed' | null }) {
   return (
@@ -212,12 +215,10 @@ function House3DViewer({ isShaking, simulationResult }: { isShaking?: boolean, s
       <ErrorBoundary>
         <Canvas 
           shadows 
-          dpr={[1, 1.5]}
+          dpr={[1, 2]}
           gl={{ 
             antialias: true, 
-            alpha: true, 
-            powerPreference: "high-performance",
-            preserveDrawingBuffer: true
+            alpha: true
           }}
           className="touch-none"
         >
@@ -229,7 +230,14 @@ function House3DViewer({ isShaking, simulationResult }: { isShaking?: boolean, s
           <pointLight position={[0, 5, 5]} intensity={1.5} />
           <pointLight position={[5, -5, 5]} intensity={0.8} />
           
-          <Suspense fallback={null}>
+          <Suspense fallback={
+            <div className="w-full h-full flex flex-col items-center justify-center bg-stone-900">
+              <div className="w-12 h-12 border-4 border-nias-gold border-t-transparent rounded-full animate-spin mb-4" />
+              <p className="text-white font-black text-[10px] uppercase tracking-[0.2em] animate-pulse">
+                Menyiapkan Model 3D...
+              </p>
+            </div>
+          }>
             <OmoHadaModel isShaking={isShaking} simulationResult={simulationResult} />
             <ContactShadows position={[0, -2, 0]} opacity={0.6} scale={15} blur={2.5} far={4} />
             <Environment preset="city" />
@@ -448,8 +456,8 @@ function MeaningfulPage() {
       desc: "Kayu dipasang menyilang membentuk huruf 'X'."
     },
     paku: {
-      title: "Paku (Lentur)",
-      desc: "Seluruh sambungan menggunakan sistem pasak kayu yang sangat lentur."
+      title: "Tanpa Paku",
+      desc: "Seluruh sambungan menggunakan sistem pasak kayu (lubang dan pengunci)."
     }
   };
 
@@ -499,7 +507,7 @@ function MeaningfulPage() {
             {[
               { id: 'ehomo', label: 'Ehomo', point: 'Poin 1' },
               { id: 'diwa', label: 'Diwa', point: 'Poin 2' },
-              { id: 'paku', label: 'Lentur', point: 'Poin 3' }
+              { id: 'paku', label: 'Tanpa Paku', point: 'Poin 3' }
             ].map((item) => (
               <button
                 key={item.id}
