@@ -154,15 +154,9 @@ class ErrorBoundary extends React.Component<{ children: React.ReactNode, onFatal
               onClick={() => {
                 this.setState({ hasError: false });
               }}
-              className="w-full py-3 bg-nias-gold text-stone-900 rounded-2xl font-black text-[10px] uppercase tracking-[0.2em] shadow-xl active:scale-95 transition-transform"
+              className="w-full py-4 bg-nias-gold text-stone-900 rounded-2xl font-black text-[10px] uppercase tracking-[0.2em] shadow-xl active:scale-95 transition-transform"
             >
-              COBA LAGI
-            </button>
-            <button 
-              onClick={() => this.props.onFatalError?.()}
-              className="w-full py-3 bg-stone-700 text-white rounded-2xl font-black text-[10px] uppercase tracking-[0.2em] active:scale-95 transition-transform"
-            >
-              MODE ILUSTRASI
+              MUAT ULANG MODEL
             </button>
           </div>
         </div>
@@ -218,22 +212,6 @@ function OmoHadaModel({ isShaking, simulationResult }: { isShaking?: boolean, si
 useGLTF.preload('/Copilot3D-6a753cf7-a08a-4c62-92e0-84fac9ae7946.glb');
 
 function House3DViewer({ isShaking, simulationResult }: { isShaking?: boolean, simulationResult?: 'steady' | 'collapsed' | null }) {
-  const [is3DSupported, setIs3DSupported] = useState(true);
-
-  if (!is3DSupported) {
-    return (
-      <div className="w-full h-full bg-stone-800 flex flex-col items-center justify-center p-8 text-center">
-        <div className="w-24 h-24 bg-nias-gold/20 rounded-full flex items-center justify-center mb-6">
-          <Box size={40} className="text-nias-gold" />
-        </div>
-        <h3 className="text-white font-black text-lg mb-2">MODE ILUSTRASI</h3>
-        <p className="text-stone-400 text-xs font-bold leading-relaxed px-4">
-          Perangkat Anda sedang tidak mendukung penayangan 3D. Gunakan navigasi poin di bawah untuk mempelajari struktur.
-        </p>
-      </div>
-    );
-  }
-
   return (
     <div className="w-full h-full bg-stone-100 rounded-3xl overflow-hidden relative shadow-inner">
       <div className="absolute top-4 left-4 z-10 flex items-center gap-2 bg-white/90 backdrop-blur-sm px-3 py-1.5 rounded-full border border-stone-200 text-stone-500 shadow-sm">
@@ -241,7 +219,7 @@ function House3DViewer({ isShaking, simulationResult }: { isShaking?: boolean, s
         <span className="text-[10px] font-bold uppercase tracking-wider">Model 3D Interaktif</span>
       </div>
       
-      <ErrorBoundary onFatalError={() => setIs3DSupported(false)}>
+      <ErrorBoundary>
         <Canvas 
           shadows 
           dpr={[1, 1.5]}
@@ -253,21 +231,23 @@ function House3DViewer({ isShaking, simulationResult }: { isShaking?: boolean, s
           className="touch-none"
         >
           <PerspectiveCamera makeDefault position={[7, 4, 7]} fov={40} />
-          <ambientLight intensity={1.5} />
-          <pointLight position={[10, 10, 10]} intensity={2} />
-          <pointLight position={[-10, 5, -10]} intensity={1} />
+          <ambientLight intensity={2.5} />
+          <pointLight position={[10, 10, 10]} intensity={3} />
+          <pointLight position={[-10, 5, -10]} intensity={1.5} />
           
           <Suspense fallback={
             <Html center>
               <div className="flex flex-col items-center justify-center">
-                <div className="w-8 h-8 border-2 border-nias-gold border-t-transparent rounded-full animate-spin mb-4" />
-                <p className="text-stone-900 font-black text-[8px] uppercase tracking-[0.2em] whitespace-nowrap">
-                  Pemuatan...
+                <div className="w-6 h-6 border-2 border-nias-gold border-t-transparent rounded-full animate-spin mb-3" />
+                <p className="text-stone-900 font-black text-[7px] uppercase tracking-[0.2em] whitespace-nowrap">
+                  Loading...
                 </p>
               </div>
             </Html>
           }>
             <OmoHadaModel isShaking={isShaking} simulationResult={simulationResult} />
+            <Environment preset="city" />
+            <ContactShadows position={[0, -2, 0]} opacity={0.6} scale={15} blur={2.5} far={4} />
           </Suspense>
   
           <OrbitControls 
@@ -276,7 +256,7 @@ function House3DViewer({ isShaking, simulationResult }: { isShaking?: boolean, s
             minDistance={4} 
             maxDistance={12}
             enableDamping={true}
-            dampingFactor={0.05}
+            dampingFactor={0.1}
           />
         </Canvas>
       </ErrorBoundary>
