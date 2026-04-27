@@ -169,8 +169,8 @@ class ErrorBoundary extends React.Component<{ children: React.ReactNode, onFatal
 function OmoHadaModel({ isShaking, simulationResult }: { isShaking?: boolean, simulationResult?: 'steady' | 'collapsed' | null }) {
   const meshRef = useRef<THREE.Group>(null);
   
-  // Try to load the GLTF model with Draco support.
-  const { scene } = useGLTF('/Copilot3D-6a753cf7-a08a-4c62-92e0-84fac9ae7946.glb', 'https://www.gstatic.com/draco/versioned/decoders/1.5.5/');
+  // Load the GLTF model.
+  const { scene } = useGLTF('Copilot3D-6a753cf7-a08a-4c62-92e0-84fac9ae7946.glb');
 
   useFrame((state) => {
     if (!meshRef.current) return;
@@ -204,7 +204,7 @@ function OmoHadaModel({ isShaking, simulationResult }: { isShaking?: boolean, si
 }
 
 // Preload for better experience
-useGLTF.preload('/Copilot3D-6a753cf7-a08a-4c62-92e0-84fac9ae7946.glb', 'https://www.gstatic.com/draco/versioned/decoders/1.5.5/');
+useGLTF.preload('Copilot3D-6a753cf7-a08a-4c62-92e0-84fac9ae7946.glb');
 
 function Loader() {
   const { progress } = useProgress();
@@ -246,10 +246,11 @@ function House3DViewer({ isShaking, simulationResult }: { isShaking?: boolean, s
           <PerspectiveCamera makeDefault position={[8, 5, 8]} fov={35} />
           
           {/* Pencahayaan Sangat Terang */}
-          <ambientLight intensity={4} />
-          <directionalLight position={[10, 20, 10]} intensity={5} castShadow />
-          <directionalLight position={[-10, 15, -10]} intensity={3} />
-          <pointLight position={[0, -10, 0]} intensity={2} color="#fff1cc" />
+          <ambientLight intensity={4.5} />
+          <directionalLight position={[10, 20, 10]} intensity={5.5} castShadow />
+          <directionalLight position={[-10, 15, -10]} intensity={3.5} />
+          <pointLight position={[0, -10, 0]} intensity={2.5} color="#fff1cc" />
+          <Environment preset="apartment" />
           
           <Suspense fallback={<Loader />}>
             <OmoHadaModel isShaking={isShaking} simulationResult={simulationResult} />
