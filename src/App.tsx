@@ -6,7 +6,7 @@
 import React, { useState, useEffect, Suspense, useRef } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Canvas, useFrame } from '@react-three/fiber';
-import { OrbitControls, PerspectiveCamera, Environment, ContactShadows, useGLTF } from '@react-three/drei';
+import { OrbitControls, PerspectiveCamera, Environment, ContactShadows, useGLTF, Html } from '@react-three/drei';
 import * as THREE from 'three';
 import { 
   Heart, 
@@ -164,8 +164,8 @@ class ErrorBoundary extends React.Component<{ children: React.ReactNode }, { has
 function OmoHadaModel({ isShaking, simulationResult }: { isShaking?: boolean, simulationResult?: 'steady' | 'collapsed' | null }) {
   const meshRef = useRef<THREE.Group>(null);
   
-  // Try to load the GLTF model. If it fails, the ErrorBoundary will catch it.
-  const { scene } = useGLTF('Copilot3D-6a753cf7-a08a-4c62-92e0-84fac9ae7946.glb');
+  // Try to load the GLTF model with absolute path.
+  const { scene } = useGLTF('/Copilot3D-6a753cf7-a08a-4c62-92e0-84fac9ae7946.glb');
 
   useFrame((state) => {
     if (!meshRef.current) return;
@@ -201,8 +201,8 @@ function OmoHadaModel({ isShaking, simulationResult }: { isShaking?: boolean, si
   );
 }
 
-// No preload for now to see if it helps with initial load issues
-// useGLTF.preload('Copilot3D-6a753cf7-a08a-4c62-92e0-84fac9ae7946.glb');
+// Preload for better experience
+useGLTF.preload('/Copilot3D-6a753cf7-a08a-4c62-92e0-84fac9ae7946.glb');
 
 function House3DViewer({ isShaking, simulationResult }: { isShaking?: boolean, simulationResult?: 'steady' | 'collapsed' | null }) {
   return (
@@ -231,12 +231,14 @@ function House3DViewer({ isShaking, simulationResult }: { isShaking?: boolean, s
           <pointLight position={[5, -5, 5]} intensity={0.8} />
           
           <Suspense fallback={
-            <div className="w-full h-full flex flex-col items-center justify-center bg-stone-900">
-              <div className="w-12 h-12 border-4 border-nias-gold border-t-transparent rounded-full animate-spin mb-4" />
-              <p className="text-white font-black text-[10px] uppercase tracking-[0.2em] animate-pulse">
-                Menyiapkan Model 3D...
-              </p>
-            </div>
+            <Html center>
+              <div className="flex flex-col items-center justify-center bg-stone-900 p-8 rounded-3xl border border-white/10">
+                <div className="w-8 h-8 border-2 border-nias-gold border-t-transparent rounded-full animate-spin mb-4" />
+                <p className="text-white font-black text-[8px] uppercase tracking-[0.2em] whitespace-nowrap animate-pulse">
+                  Memuat Model 3D...
+                </p>
+              </div>
+            </Html>
           }>
             <OmoHadaModel isShaking={isShaking} simulationResult={simulationResult} />
             <ContactShadows position={[0, -2, 0]} opacity={0.6} scale={15} blur={2.5} far={4} />
