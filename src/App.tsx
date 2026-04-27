@@ -138,27 +138,24 @@ class ErrorBoundary extends React.Component<{ children: React.ReactNode, onFatal
   render() {
     if (this.state.hasError) {
       return (
-        <div className="w-full h-full flex flex-col items-center justify-center bg-stone-900/90 backdrop-blur-sm p-6 text-center">
+        <div className="w-full h-full flex flex-col items-center justify-center bg-stone-900/95 backdrop-blur-md p-8 text-center">
           <motion.div
-            animate={{ rotate: [0, 10, -10, 0] }}
-            transition={{ repeat: Infinity, duration: 2 }}
+            initial={{ scale: 0.8, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1, rotate: [0, 5, -5, 0] }}
+            transition={{ duration: 0.5 }}
           >
             <AlertTriangle size={48} className="text-nias-gold mb-4" />
           </motion.div>
-          <p className="text-white font-black text-xs uppercase tracking-widest leading-relaxed mb-6">
-            Maaf, Model 3D gagal dimuat.<br/>
-            <span className="opacity-50 font-bold text-[10px]">Perangkat Anda mungkin tidak mendukung WebGL.</span>
+          <h3 className="text-white font-black text-sm uppercase tracking-widest mb-2">MODEL GAGAL DIMUAT</h3>
+          <p className="text-stone-400 font-bold text-[10px] leading-relaxed mb-6 max-w-[200px]">
+            Masalah koneksi atau perangkat tidak mendukung WebGL.
           </p>
-          <div className="flex flex-col gap-3 w-full max-w-[200px]">
-            <button 
-              onClick={() => {
-                this.setState({ hasError: false });
-              }}
-              className="w-full py-4 bg-nias-gold text-stone-900 rounded-2xl font-black text-[10px] uppercase tracking-[0.2em] shadow-xl active:scale-95 transition-transform"
-            >
-              MUAT ULANG MODEL
-            </button>
-          </div>
+          <button 
+            onClick={() => window.location.reload()}
+            className="w-full max-w-[180px] py-4 bg-nias-gold text-stone-900 rounded-2xl font-black text-[10px] uppercase tracking-[0.2em] shadow-xl active:scale-95 transition-transform"
+          >
+            REFRESH HALAMAN
+          </button>
         </div>
       );
     }
@@ -202,8 +199,9 @@ function OmoHadaModel({ isShaking, simulationResult }: { isShaking?: boolean, si
     <primitive 
       ref={meshRef} 
       object={scene} 
-      scale={5.5} 
-      position={[0, -2.8, 0]} 
+      scale={4.8} 
+      position={[0, -2.5, 0]} 
+      dispose={null}
     />
   );
 }
@@ -240,14 +238,13 @@ function House3DViewer({ isShaking, simulationResult }: { isShaking?: boolean, s
               <div className="flex flex-col items-center justify-center">
                 <div className="w-6 h-6 border-2 border-nias-gold border-t-transparent rounded-full animate-spin mb-3" />
                 <p className="text-stone-900 font-black text-[7px] uppercase tracking-[0.2em] whitespace-nowrap">
-                  Loading...
+                  MEMUAT...
                 </p>
               </div>
             </Html>
           }>
             <OmoHadaModel isShaking={isShaking} simulationResult={simulationResult} />
-            <Environment preset="city" />
-            <ContactShadows position={[0, -2, 0]} opacity={0.6} scale={15} blur={2.5} far={4} />
+            <ContactShadows position={[0, -2.8, 0]} opacity={0.4} scale={10} blur={2} far={4.5} />
           </Suspense>
   
           <OrbitControls 
