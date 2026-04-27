@@ -53,6 +53,69 @@ import {
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 
+// --- Nias Atmosphere Decor ---
+
+function NiasAtmosphere() {
+  return (
+    <div className="fixed inset-0 pointer-events-none overflow-hidden z-0 select-none">
+      <div className="absolute top-0 left-0 w-full h-full opacity-[0.04]">
+        {/* Animated Spirals (Ni'o Goli) */}
+        {[...Array(6)].map((_, i) => (
+          <motion.div
+            key={i}
+            initial={{ 
+              x: Math.random() * 100 + "%", 
+              y: Math.random() * 100 + "%",
+              opacity: 0 
+            }}
+            animate={{ 
+              y: ["0%", "100%"],
+              opacity: [0, 1, 0],
+              rotate: [0, 360]
+            }}
+            transition={{
+              duration: 15 + Math.random() * 10,
+              repeat: Infinity,
+              delay: i * 2,
+              ease: "linear"
+            }}
+            className="absolute"
+          >
+            <svg width="120" height="120" viewBox="0 0 100 100" className="text-stone-900 fill-none stroke-current stroke-3">
+              <path d="M50 50 C 50 20, 80 20, 80 50 C 80 80, 20 80, 20 50 C 20 20, 60 20, 60 50 C 60 70, 40 70, 40 50" />
+            </svg>
+          </motion.div>
+        ))}
+        
+        {/* Floating Geometric Shapes */}
+        {[...Array(8)].map((_, i) => (
+          <motion.div
+            key={`geo-${i}`}
+            animate={{ 
+              x: ["-10%", "110%"],
+              rotate: [0, 45, 0]
+            }}
+            transition={{
+              duration: 20 + Math.random() * 15,
+              repeat: Infinity,
+              delay: i * 3,
+              ease: "easeInOut"
+            }}
+            className="absolute top-1/4 opacity-30"
+            style={{ top: (i * 12) + "%" }}
+          >
+            <div className="w-8 h-8 border-2 border-stone-800 rotate-45" />
+          </motion.div>
+        ))}
+      </div>
+      
+      {/* Texture Overlay */}
+      <div className="absolute inset-0 opacity-[0.15] mix-blend-multiply" 
+           style={{ backgroundImage: `url("https://www.transparenttextures.com/patterns/natural-paper.png")` }} />
+    </div>
+  );
+}
+
 // --- Error Boundary for 3D ---
 
 class ErrorBoundary extends React.Component<{ children: React.ReactNode }, { hasError: boolean }> {
@@ -72,12 +135,23 @@ class ErrorBoundary extends React.Component<{ children: React.ReactNode }, { has
   render() {
     if (this.state.hasError) {
       return (
-        <div className="w-full h-full flex flex-col items-center justify-center bg-stone-900 p-6 text-center">
-          <AlertTriangle size={48} className="text-nias-gold mb-4" />
-          <p className="text-white font-black text-xs uppercase tracking-widest leading-relaxed">
+        <div className="w-full h-full flex flex-col items-center justify-center bg-stone-900/90 backdrop-blur-sm p-6 text-center">
+          <motion.div
+            animate={{ rotate: [0, 10, -10, 0] }}
+            transition={{ repeat: Infinity, duration: 2 }}
+          >
+            <AlertTriangle size={48} className="text-nias-gold mb-4" />
+          </motion.div>
+          <p className="text-white font-black text-xs uppercase tracking-widest leading-relaxed mb-6">
             Maaf, Model 3D gagal dimuat.<br/>
-            <span className="opacity-50 font-bold">Harap segarkan halaman.</span>
+            <span className="opacity-50 font-bold">Tekan tombol untuk mencoba kembali.</span>
           </p>
+          <button 
+            onClick={() => this.setState({ hasError: false })}
+            className="px-6 py-3 bg-nias-gold text-stone-900 rounded-2xl font-black text-[10px] uppercase tracking-[0.2em] shadow-xl active:scale-95 transition-transform"
+          >
+            MUAT ULANG MODEL
+          </button>
         </div>
       );
     }
@@ -138,8 +212,13 @@ function House3DViewer({ isShaking, simulationResult }: { isShaking?: boolean, s
       <ErrorBoundary>
         <Canvas 
           shadows 
-          dpr={[1, 2]} 
-          gl={{ antialias: true, alpha: true, powerPreference: "high-performance" }}
+          dpr={[1, 1.5]}
+          gl={{ 
+            antialias: true, 
+            alpha: true, 
+            powerPreference: "high-performance",
+            preserveDrawingBuffer: true
+          }}
           className="touch-none"
         >
           <PerspectiveCamera makeDefault position={[4, 2, 4]} fov={38} />
@@ -189,9 +268,10 @@ export default function App() {
   ];
 
   return (
-    <div className="flex flex-col h-screen max-w-md mx-auto bg-earth-bg overflow-hidden border-x border-stone-200">
+    <div className="flex flex-col h-screen max-w-md mx-auto bg-cream-bg overflow-hidden border-x border-stone-200">
       {/* Main Content Area */}
-      <main className="flex-1 overflow-y-auto pb-20 relative">
+      <main className="flex-1 overflow-y-auto pb-20 relative z-10">
+        <NiasAtmosphere />
         <AnimatePresence mode="wait">
           {currentPage === 'dashboard' && <DashboardPage key="dashboard" onSelect={(p) => setCurrentPage(p)} />}
           {currentPage === 'mindful' && <MindfulPage key="mindful" onNext={() => setCurrentPage('meaningful')} />}
