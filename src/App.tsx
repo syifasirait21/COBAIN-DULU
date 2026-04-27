@@ -252,7 +252,7 @@ function House3DViewer({ isShaking, simulationResult }: { isShaking?: boolean, s
           }}
           className="touch-none"
         >
-          <PerspectiveCamera makeDefault position={[4, 2, 4]} fov={40} />
+          <PerspectiveCamera makeDefault position={[7, 4, 7]} fov={40} />
           <ambientLight intensity={1.5} />
           <pointLight position={[10, 10, 10]} intensity={2} />
           <pointLight position={[-10, 5, -10]} intensity={1} />
@@ -273,8 +273,10 @@ function House3DViewer({ isShaking, simulationResult }: { isShaking?: boolean, s
           <OrbitControls 
             enablePan={false} 
             enableZoom={true}
-            minDistance={2} 
-            maxDistance={10}
+            minDistance={4} 
+            maxDistance={12}
+            enableDamping={true}
+            dampingFactor={0.05}
           />
         </Canvas>
       </ErrorBoundary>
