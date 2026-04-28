@@ -169,8 +169,33 @@ class ErrorBoundary extends React.Component<{ children: React.ReactNode, onFatal
 function OmoHadaModel({ isShaking, simulationResult }: { isShaking?: boolean, simulationResult?: 'steady' | 'collapsed' | null }) {
   const meshRef = useRef<THREE.Group>(null);
   
-  // Load the GLTF model with Draco support.
-  const { scene } = useGLTF('/Omo Hada.glb', 'https://www.gstatic.com/draco/versioned/decoders/1.5.5/');
+  // Load the GLTF model with Draco support and error handling.
+  const { scene } = useGLTF('/bawomataluo_omo_sebua-v1.glb', 'https://www.gstatic.com/draco/versioned/decoders/1.5.5/', undefined, (error) => {
+    console.error('Error loading 3D model:', error);
+  });
+
+  // Auto-centering and scaling logic
+  useEffect(() => {
+    if (scene) {
+      // Reset rotation/scale first for accurate bounding box
+      scene.rotation.set(0, 0, 0);
+      scene.scale.set(1, 1, 1);
+      
+      const box = new THREE.Box3().setFromObject(scene);
+      const size = box.getSize(new THREE.Vector3());
+      const center = box.getCenter(new THREE.Vector3());
+      
+      // Center the model
+      scene.position.x += (scene.position.x - center.x);
+      scene.position.y += (scene.position.y - center.y);
+      scene.position.z += (scene.position.z - center.z);
+
+      // Adjust scale to fit a standard unit (e.g., 5 units wide)
+      const maxDim = Math.max(size.x, size.y, size.z);
+      const scale = 5 / maxDim;
+      scene.scale.setScalar(scale);
+    }
+  }, [scene]);
 
   useFrame((state) => {
     if (!meshRef.current) return;
@@ -204,7 +229,7 @@ function OmoHadaModel({ isShaking, simulationResult }: { isShaking?: boolean, si
 }
 
 // Preload for better experience
-useGLTF.preload('/Omo Hada.glb', 'https://www.gstatic.com/draco/versioned/decoders/1.5.5/');
+useGLTF.preload('/bawomataluo_omo_sebua-v1.glb', 'https://www.gstatic.com/draco/versioned/decoders/1.5.5/');
 
 function Loader() {
   const { progress } = useProgress();
