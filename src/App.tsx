@@ -1557,7 +1557,7 @@ function DraggableItem({ item, disabled }: { item: MitigationItem, disabled?: bo
       style={style}
       {...attributes}
       {...listeners}
-      className={`p-3 bg-white rounded-2xl border-2 border-stone-100 shadow-sm flex items-center gap-3 transition-all hover:border-blue-200 active:scale-105 ${disabled ? 'cursor-default opacity-50' : 'cursor-grab active:cursor-grabbing'}`}
+      className={`p-3 bg-white rounded-2xl border-2 border-stone-100 shadow-sm flex items-center gap-3 transition-all hover:border-blue-200 active:scale-105 select-none ${disabled ? 'cursor-default opacity-50' : 'cursor-grab active:cursor-grabbing'}`}
     >
       <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${disabled ? 'bg-stone-100 text-stone-300' : 'bg-blue-50 text-blue-500'}`}>
         <Grab size={14} />
@@ -1761,7 +1761,7 @@ function MitigasiPage() {
   const activeItemData = initialItems.find(i => i.id === activeItemId);
 
   return (
-    <div className="p-6 space-y-6 bg-cream-bg min-h-[700px] flex flex-col items-center pb-40 relative">
+    <div className="p-6 space-y-6 bg-cream-bg min-h-[700px] flex flex-col items-center pb-40 relative select-none">
       {/* Floating Success Badge & Confetti */}
       <AnimatePresence>
         {showSuccessBadge && (
