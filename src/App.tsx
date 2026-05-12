@@ -356,9 +356,14 @@ function Loader() {
   );
 }
 
-function OmoHadaModel({ onPartClick }: { onPartClick?: (part: 'ehomo' | 'diwa' | 'paku') => void }) {
+function OmoHadaModel({ isShaking, simulationResult, onPartClick }: { 
+  isShaking?: boolean, 
+  simulationResult?: 'steady' | 'collapsed' | null,
+  onPartClick?: (part: 'ehomo' | 'diwa' | 'paku') => void 
+}) {
   const { scene } = useGLTF('/omo-hada.glb');
   const clonedScene = React.useMemo(() => scene.clone(), [scene]);
+  const groupRef = useRef<THREE.Group>(null);
   
   useEffect(() => {
     clonedScene.traverse((child) => {
@@ -375,23 +380,49 @@ function OmoHadaModel({ onPartClick }: { onPartClick?: (part: 'ehomo' | 'diwa' |
     });
   }, [clonedScene]);
 
+  useFrame((state) => {
+    if (!groupRef.current) return;
+
+    // Simulation logic
+    if (isShaking) {
+      const shakeIntensity = 0.15;
+      const speed = 50;
+      groupRef.current.position.x = Math.sin(state.clock.elapsedTime * speed) * shakeIntensity;
+      groupRef.current.position.z = Math.cos(state.clock.elapsedTime * speed * 0.9) * shakeIntensity;
+      groupRef.current.rotation.y = Math.sin(state.clock.elapsedTime * speed * 0.5) * 0.02;
+    } else if (simulationResult === 'collapsed') {
+      groupRef.current.position.y = THREE.MathUtils.lerp(groupRef.current.position.y, -3.5, 0.05);
+      groupRef.current.rotation.x = THREE.MathUtils.lerp(groupRef.current.rotation.x, -Math.PI * 0.15, 0.05);
+      groupRef.current.rotation.z = THREE.MathUtils.lerp(groupRef.current.rotation.z, Math.PI * 0.1, 0.03);
+    } else {
+      groupRef.current.position.x = THREE.MathUtils.lerp(groupRef.current.position.x, 0, 0.1);
+      groupRef.current.position.y = THREE.MathUtils.lerp(groupRef.current.position.y, 0, 0.1);
+      groupRef.current.position.z = THREE.MathUtils.lerp(groupRef.current.position.z, 0, 0.1);
+      groupRef.current.rotation.x = THREE.MathUtils.lerp(groupRef.current.rotation.x, 0, 0.1);
+      groupRef.current.rotation.y = THREE.MathUtils.lerp(groupRef.current.rotation.y, 0, 0.1);
+      groupRef.current.rotation.z = THREE.MathUtils.lerp(groupRef.current.rotation.z, 0, 0.1);
+    }
+  });
+
   return (
     <Center>
-      <primitive 
-        object={clonedScene} 
-        scale={4.0} // Robust scale for visibility
-        onClick={(e: any) => {
-          e.stopPropagation();
-          const name = (e.object?.name || '').toLowerCase();
-          let part: 'ehomo' | 'diwa' | 'paku' | undefined;
-          
-          if (name.includes('roof') || name.includes('atap') || name.includes('paku')) part = 'paku';
-          else if (name.includes('pillar') || name.includes('tiang') || name.includes('diwa')) part = 'diwa';
-          else if (name.includes('base') || name.includes('stone') || name.includes('ehomo')) part = 'ehomo';
-          
-          onPartClick?.(part as any);
-        }}
-      />
+      <group ref={groupRef}>
+        <primitive 
+          object={clonedScene} 
+          scale={4.0} // Robust scale for visibility
+          onClick={(e: any) => {
+            e.stopPropagation();
+            const name = (e.object?.name || '').toLowerCase();
+            let part: 'ehomo' | 'diwa' | 'paku' | undefined;
+            
+            if (name.includes('roof') || name.includes('atap') || name.includes('paku')) part = 'paku';
+            else if (name.includes('pillar') || name.includes('tiang') || name.includes('diwa')) part = 'diwa';
+            else if (name.includes('base') || name.includes('stone') || name.includes('ehomo')) part = 'ehomo';
+            
+            onPartClick?.(part as any);
+          }}
+        />
+      </group>
     </Center>
   );
 }
@@ -442,7 +473,11 @@ function House3DViewer({ isShaking, simulationResult, onPartClick, useModel = fa
         <Suspense fallback={null}>
           <Float speed={1.5} rotationIntensity={0.2} floatIntensity={0.5}>
             {useModel ? (
-              <OmoHadaModel onPartClick={onPartClick} />
+              <OmoHadaModel 
+                isShaking={isShaking} 
+                simulationResult={simulationResult} 
+                onPartClick={onPartClick} 
+              />
             ) : (
               <ProceduralNiasHouse 
                 isShaking={isShaking} 
@@ -1385,7 +1420,7 @@ function JoyfulPage({ isShaking, setIsShaking }: { isShaking: boolean, setIsShak
 
       <div className="relative w-full aspect-[4/3] flex flex-col items-center bg-stone-100 rounded-[40px] overflow-hidden border-2 border-white shadow-2xl group ring-1 ring-stone-200">
         <Suspense fallback={<Loader />}>
-          <House3DViewer isShaking={isShaking} simulationResult={simulationResult} />
+          <House3DViewer useModel={true} isShaking={isShaking} simulationResult={simulationResult} />
         </Suspense>
         <div className="w-[85%] h-4 bg-stone-200/50 rounded-full mt-auto mb-6 shadow-inner relative border-2 border-white pointer-events-none">
           <div className="absolute inset-0 bg-stone-400/10" />
@@ -1430,7 +1465,9 @@ function JoyfulPage({ isShaking, setIsShaking }: { isShaking: boolean, setIsShak
                   <h3 className={`text-2xl font-black italic tracking-tighter uppercase leading-none ${simulationResult === 'steady' ? 'text-green-700' : 'text-red-700'}`}>
                     {simulationResult === 'steady' ? 'AMAN!' : 'HANCUR TOTAL!'}
                   </h3>
-                  <p className="text-stone-600 font-bold text-[10px] uppercase tracking-wider mt-1 opacity-60">Resultat Simulasi Berakhir</p>
+                  <p className="text-stone-600 font-bold text-[10px] uppercase tracking-wider mt-1 opacity-60">
+                    {simulationResult === 'steady' ? 'yey, pilihanmu benar' : 'Pilihanmu salah, coba lagi!'}
+                  </p>
                 </div>
               </div>
               
