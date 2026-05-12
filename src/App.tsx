@@ -233,9 +233,9 @@ function Loader() {
   );
 }
 
-function House3DViewer({ isShaking, simulationResult }: { isShaking?: boolean, simulationResult?: 'steady' | 'collapsed' | null }) {
+function House3DViewer({ isShaking, simulationResult, className }: { isShaking?: boolean, simulationResult?: 'steady' | 'collapsed' | null, className?: string }) {
   return (
-    <div className="w-full h-full bg-stone-100 rounded-3xl overflow-hidden relative shadow-inner">
+    <div className={`w-full h-full bg-stone-100 rounded-[32px] overflow-hidden relative shadow-inner ${className}`}>
       <div className="absolute top-4 left-4 z-30 flex items-center gap-2 bg-white/90 backdrop-blur-sm px-3 py-1.5 rounded-full border border-stone-200 text-stone-500 shadow-sm pointer-events-none">
         <Rotate3d size={16} />
         <span className="text-[10px] font-bold uppercase tracking-wider">Model 3D Interaktif</span>
@@ -244,39 +244,34 @@ function House3DViewer({ isShaking, simulationResult }: { isShaking?: boolean, s
       <Canvas 
         shadows 
         dpr={[1, 2]} 
-        className="w-full h-full"
-        gl={{ antialias: true }}
+        className="w-full h-full touch-none"
+        gl={{ antialias: true, alpha: true }}
       >
-        <PerspectiveCamera makeDefault position={[10, 6, 12]} fov={35} />
+        <PerspectiveCamera makeDefault position={[12, 8, 12]} fov={35} />
         <OrbitControls 
           enablePan={false} 
           minDistance={8} 
-          maxDistance={25} 
+          maxDistance={30} 
           autoRotate={!isShaking && !simulationResult}
           autoRotateSpeed={0.5}
+          makeDefault
         />
         
         {/* Environment & Lighting */}
         <ambientLight intensity={1.5} />
-        <directionalLight 
-          position={[10, 20, 10]} 
-          intensity={2.5} 
-          castShadow 
-          shadow-mapSize={[1024, 1024]}
-        />
+        <spotLight position={[10, 15, 10]} angle={0.3} penumbra={1} castShadow intensity={2} />
         <pointLight position={[-10, 5, -10]} intensity={1} color="#ffe0b2" />
-        <Stars radius={100} depth={50} count={5000} factor={4} saturation={0} fade speed={1} />
-        <Environment preset="park" />
+        <Environment preset="city" />
         
         <Suspense fallback={null}>
-          <Float speed={1.5} rotationIntensity={0.2} floatIntensity={0.5}>
+          <Float speed={1.5} rotationIntensity={0.1} floatIntensity={0.2}>
             <ProceduralNiasHouse isShaking={isShaking} simulationResult={simulationResult} />
           </Float>
           <ContactShadows 
-            position={[0, -2, 0]} 
+            position={[0, -2.1, 0]} 
             opacity={0.4} 
             scale={20} 
-            blur={2} 
+            blur={2.4} 
             far={4.5} 
           />
         </Suspense>
@@ -377,65 +372,137 @@ function DashboardPage({ onSelect }: { onSelect: (p: Page) => void }) {
     icon: any;
     color: string;
     des: string;
-    iconColor?: string;
+    size: 'large' | 'small';
+    pattern?: string;
   }
 
   const modules: ModuleItem[] = [
-    { id: 'mindful', title: 'Mindful', subtitle: 'Sejarah & Tragedi', icon: Heart, color: 'bg-brick-red', des: 'Pahami luka masa lalu & kearifan lokal.' },
-    { id: 'meaningful', title: 'Meaningful', subtitle: 'Anatomi Omo Hada', icon: Lightbulb, color: 'bg-nias-gold', des: 'Rahasia struktur tahan gempa Omo Hada.' },
-    { id: 'joyful', title: 'Joyful', subtitle: 'Simulasi Gempa', icon: Gamepad2, color: 'bg-wood-dark', des: 'Uji ketahanan desainmu secara interaktif.' },
-    { id: 'mitigasi', title: 'Mitigasi', subtitle: 'Aksi Penyelamatan', icon: ShieldAlert, color: 'bg-stone-600', des: 'Pelajari langkah siaga saat darurat.' }
+    { 
+      id: 'mindful', 
+      title: 'Mindful', 
+      subtitle: 'Sejarah & Tragedi', 
+      icon: Heart, 
+      color: 'bg-brick-red', 
+      des: 'Pahami luka masa lalu & kearifan lokal masyarakat Nias.',
+      size: 'large'
+    },
+    { 
+      id: 'meaningful', 
+      title: 'Meaningful', 
+      subtitle: 'Struktur', 
+      icon: Lightbulb, 
+      color: 'bg-nias-gold', 
+      des: 'Anatomi Omo Hada.',
+      size: 'small' 
+    },
+    { 
+      id: 'joyful', 
+      title: 'Joyful', 
+      subtitle: 'Simulasi', 
+      icon: Gamepad2, 
+      color: 'bg-wood-dark', 
+      des: 'Uji kekuatan desain.',
+      size: 'small'
+    },
+    { 
+      id: 'mitigasi', 
+      title: 'Mitigasi', 
+      subtitle: 'Aksi Penyelamatan', 
+      icon: ShieldAlert, 
+      color: 'bg-stone-800', 
+      des: 'Langkah siaga darurat & evakuasi.',
+      size: 'large'
+    }
   ];
 
   return (
     <motion.div 
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
-      className="p-8 space-y-8"
+      className="p-6 space-y-8 min-h-screen"
     >
-      <header className="space-y-2 mt-4">
+      <header className="relative mt-4 space-y-1">
+        <motion.div
+          initial={{ scale: 0.9, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+          transition={{ duration: 0.5 }}
+          className="absolute -top-6 -left-6 w-32 h-32 bg-brick-red/5 rounded-full blur-3xl -z-10"
+        />
+        <p className="text-[10px] font-black uppercase tracking-[0.3em] text-brick-red/60">Modul Pembelajaran</p>
         <h1 className="text-4xl font-black text-wood-dark tracking-tighter leading-none">
           Ya'ahowu, <br/>
           <span className="text-brick-red">Nono Niha!</span>
         </h1>
-        <p className="text-stone-600 text-sm font-bold leading-tight">
-          Mari belajar ketangguhan dari leluhur Nias melalui 4 fase penting.
-        </p>
+        <div className="flex items-center gap-2 mt-4">
+          <div className="h-1 w-12 bg-nias-gold rounded-full" />
+          <p className="text-stone-500 text-[11px] font-bold uppercase tracking-widest">Pilih Jalur Belajar Anda</p>
+        </div>
       </header>
 
-      <div className="grid gap-4">
+      <div className="grid grid-cols-2 gap-4">
         {modules.map((m, idx) => {
           const Icon = m.icon;
+          const isLarge = m.size === 'large';
+          
           return (
             <motion.button
               key={m.id}
-              initial={{ x: -20, opacity: 0 }}
-              animate={{ x: 0, opacity: 1 }}
-              transition={{ delay: idx * 0.1 }}
+              initial={{ y: 20, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              transition={{ delay: idx * 0.1, type: "spring", stiffness: 300, damping: 24 }}
               onClick={() => onSelect(m.id as Page)}
-              className="group flex flex-col items-start p-6 bg-white rounded-[32px] shadow-sm hover:shadow-xl transition-all border border-stone-100 text-left relative overflow-hidden"
+              className={`group relative flex flex-col items-start p-5 bg-white rounded-[32px] border border-stone-100 text-left overflow-hidden transition-all duration-300 active:scale-[0.97]
+                ${isLarge ? 'col-span-2 shadow-sm hover:shadow-xl' : 'col-span-1 shadow-sm hover:shadow-lg'}
+              `}
             >
-              <div className={`${m.color} p-3 rounded-2xl ${m.id === 'meaningful' ? 'text-stone-900' : 'text-white'} mb-4 group-hover:scale-110 transition-transform`}>
-                <Icon size={24} />
+              {/* Decorative Pattern Background */}
+              <div className="absolute top-0 right-0 p-4 opacity-[0.03] group-hover:opacity-[0.08] transition-opacity">
+                <Icon size={isLarge ? 120 : 60} strokeWidth={1} />
               </div>
-              <div className="space-y-1">
-                <span className="text-[10px] uppercase font-black tracking-widest text-stone-400">{m.subtitle}</span>
-                <h3 className="text-xl font-black text-stone-800">{m.title}</h3>
-                <p className="text-xs text-stone-500 font-bold leading-relaxed">{m.des}</p>
+
+              <div className={`${m.color} p-2.5 rounded-2xl ${m.id === 'meaningful' ? 'text-stone-900' : 'text-white'} mb-4 group-hover:scale-110 group-hover:rotate-3 transition-all shadow-lg`}>
+                <Icon size={20} />
               </div>
-              <div className="absolute top-6 right-6 text-stone-200 group-hover:text-brick-red/20 transition-colors">
-                <ChevronRight size={32} />
+
+              <div className="space-y-1 relative z-10">
+                <span className="text-[9px] uppercase font-black tracking-widest text-stone-400 group-hover:text-brick-red underline decoration-nias-gold/30 underline-offset-4 transition-colors">
+                  {m.subtitle}
+                </span>
+                <h3 className={`font-black text-stone-800 tracking-tight leading-tight transition-all ${isLarge ? 'text-2xl' : 'text-lg'}`}>
+                  {m.title}
+                </h3>
+                <p className={`text-stone-500 font-bold leading-relaxed opacity-70 transition-opacity group-hover:opacity-100 ${isLarge ? 'text-[11px] mt-1 pr-12' : 'text-[9px] line-clamp-2'}`}>
+                  {m.des}
+                </p>
               </div>
+
+              {isLarge && (
+                <div className="absolute bottom-5 right-5 w-10 h-10 bg-stone-50 rounded-full flex items-center justify-center text-stone-300 group-hover:bg-brick-red group-hover:text-white transition-all shadow-inner">
+                  <ChevronRight size={20} />
+                </div>
+              )}
             </motion.button>
           );
         })}
       </div>
 
-      <div className="bg-brick-red/5 p-6 rounded-[32px] border-2 border-brick-red/10 border-dashed text-center">
-        <p className="text-xs font-bold text-brick-red/60 uppercase tracking-tighter">
-          "Kearifan lokal adalah tameng kita di masa depan."
-        </p>
-      </div>
+      <motion.div 
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ delay: 0.6 }}
+        className="bg-stone-900 p-6 rounded-[32px] shadow-2xl relative overflow-hidden group"
+      >
+        <div className="absolute top-0 right-0 w-24 h-24 bg-nias-gold/10 rounded-full blur-2xl -mr-12 -mt-12" />
+        <div className="flex items-center gap-4">
+          <div className="w-12 h-12 bg-nias-gold/20 rounded-2xl flex items-center justify-center text-nias-gold shrink-0">
+            <ShieldAlert size={24} />
+          </div>
+          <div className="space-y-1">
+            <p className="text-white font-black text-sm tracking-tight capitalize italic">"Kearifan lokal adalah tameng kita di masa depan."</p>
+            <p className="text-white/40 text-[9px] font-bold uppercase tracking-widest">- Pesan Leluhur Nias</p>
+          </div>
+        </div>
+      </motion.div>
     </motion.div>
   );
 }
@@ -551,16 +618,10 @@ function MeaningfulPage() {
       <div className="flex-1 relative flex flex-col items-center pb-8 px-6 pt-6 overflow-y-auto">
         <div className="w-full max-w-md flex flex-col gap-6">
           {/* Main 3D Viewer Area */}
-          <div className="relative w-full aspect-[4/3] bg-stone-900 rounded-[40px] overflow-hidden border-2 border-white shadow-2xl group ring-1 ring-stone-200">
-            <Suspense fallback={
-              <div className="w-full h-full flex items-center justify-center text-white font-black text-xs uppercase tracking-widest animate-pulse">
-                Memuat Model 3D...
-              </div>
-            }>
-              <House3DViewer />
-            </Suspense>
-            <div className="absolute top-4 left-1/2 -translate-x-1/2 bg-white/90 backdrop-blur-sm px-4 py-1.5 rounded-full border border-stone-200 text-[10px] font-black text-stone-500 uppercase tracking-widest pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity">
-              Slide putar • Zoom detail
+          <div className="relative w-full aspect-[4/3] bg-stone-100 rounded-[40px] overflow-hidden border-4 border-white shadow-2xl group ring-1 ring-stone-200">
+            <House3DViewer />
+            <div className="absolute top-4 left-1/2 -translate-x-1/2 bg-white/90 backdrop-blur-sm px-4 py-1.5 rounded-full border border-stone-200 text-[10px] font-black text-stone-500 uppercase tracking-widest pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity z-40">
+              Geser untuk Putar
             </div>
           </div>
 
@@ -863,7 +924,9 @@ function JoyfulPage({ isShaking, setIsShaking }: { isShaking: boolean, setIsShak
       </div>
 
       <div className="relative w-full flex flex-col items-center">
-        <HouseSVGViewer isShaking={isShaking} simulationResult={simulationResult} />
+        <div className="w-full aspect-square md:aspect-video rounded-[32px] overflow-hidden border-4 border-white shadow-2xl">
+          <House3DViewer isShaking={isShaking} simulationResult={simulationResult} />
+        </div>
         <div className="w-[85%] h-6 bg-stone-200 rounded-full mt-4 shadow-inner overflow-hidden relative border-4 border-white">
           <div className="absolute inset-0 bg-stone-400/20" />
         </div>
