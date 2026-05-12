@@ -383,6 +383,19 @@ type Page = 'dashboard' | 'mindful' | 'meaningful' | 'joyful' | 'mitigasi';
 
 function SplashScreen({ onComplete }: { onComplete: () => void }) {
   const [step, setStep] = useState(0);
+
+  useEffect(() => {
+    // Preload intro images to ensure snappy transitions
+    const imageUrls = [
+      "/Splash1.png", 
+      "/splash2.png", 
+      "/splash3.png"
+    ];
+    imageUrls.forEach(url => {
+      const img = new Image();
+      img.src = url;
+    });
+  }, []);
   
   const steps = [
     {
@@ -424,7 +437,7 @@ function SplashScreen({ onComplete }: { onComplete: () => void }) {
       <motion.div 
         initial={{ y: -30, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
-        transition={{ delay: 0.2 }}
+        transition={{ delay: 0.1 }}
         className="absolute top-5 left-1/2 -translate-x-1/2 bg-white rounded-full w-[200px] h-[46px] flex items-center justify-center gap-3 shadow-xl border-2 border-white/80 z-50"
       >
         <div className="w-8 h-8 flex items-center justify-center shrink-0">
@@ -467,7 +480,7 @@ function SplashScreen({ onComplete }: { onComplete: () => void }) {
           initial={{ opacity: 0, x: 20 }}
           animate={{ opacity: 1, x: 0 }}
           exit={{ opacity: 0, x: -20 }}
-          transition={{ duration: 0.5, ease: "easeInOut" }}
+          transition={{ duration: 0.3, ease: "easeOut" }}
           className="relative w-full h-full flex flex-col items-center"
         >
           {/* Text Content */}
