@@ -6,8 +6,9 @@
 import React, { useState, useEffect, Suspense, useRef } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Canvas, useFrame } from '@react-three/fiber';
-import { OrbitControls, PerspectiveCamera, Environment, ContactShadows, Float, Stars } from '@react-three/drei';
+import { OrbitControls, PerspectiveCamera, Environment, ContactShadows, Float, Stars, useGLTF, Center } from '@react-three/drei';
 import * as THREE from 'three';
+import { toPng } from 'html-to-image';
 import { 
   Heart, 
   Lightbulb, 
@@ -37,7 +38,10 @@ import {
   Grab,
   MousePointer2,
   Lightbulb as LightbulbIcon,
-  BookOpen
+  BookOpen,
+  Check,
+  Download,
+  Award
 } from 'lucide-react';
 import {
   DndContext, 
@@ -153,7 +157,11 @@ const darkWoodMaterial = new THREE.MeshStandardMaterial({ color: '#3e2723', roug
 const stoneMaterial = new THREE.MeshStandardMaterial({ color: '#757575', roughness: 0.6 });
 const roofMaterial = new THREE.MeshStandardMaterial({ color: '#4e342e', roughness: 1 });
 
-function ProceduralNiasHouse({ isShaking, simulationResult }: { isShaking?: boolean, simulationResult?: 'steady' | 'collapsed' | null }) {
+function ProceduralNiasHouse({ isShaking, simulationResult, onPartClick }: { 
+  isShaking?: boolean, 
+  simulationResult?: 'steady' | 'collapsed' | null,
+  onPartClick?: (part: 'ehomo' | 'diwa' | 'paku') => void
+}) {
   const groupRef = useRef<THREE.Group>(null);
   const roofRef = useRef<THREE.Group>(null);
   const bodyRef = useRef<THREE.Group>(null);
@@ -243,7 +251,13 @@ function ProceduralNiasHouse({ isShaking, simulationResult }: { isShaking?: bool
   return (
     <group ref={groupRef}>
       {/* Foundation Stones (Batu Umpak) - Stay put */}
-      <group position={[0, -2, 0]}>
+      <group 
+        position={[0, -2, 0]} 
+        onClick={(e) => {
+          e.stopPropagation();
+          onPartClick?.('ehomo');
+        }}
+      >
         {[-2, 0, 2].map((x) => 
           [-1.5, 1.5].map((z) => (
             <mesh key={`${x}-${z}`} position={[x, 0.1, z]} material={stoneMaterial} receiveShadow castShadow>
@@ -254,7 +268,14 @@ function ProceduralNiasHouse({ isShaking, simulationResult }: { isShaking?: bool
       </group>
 
       {/* Pillars Group */}
-      <group ref={pillarsRef} position={[0, -0.8, 0]}>
+      <group 
+        ref={pillarsRef} 
+        position={[0, -0.8, 0]}
+        onClick={(e) => {
+          e.stopPropagation();
+          onPartClick?.('diwa');
+        }}
+      >
         {[-1.8, 1.8].map((x) => 
           [-1.2, 1.2].map((z) => (
             <mesh key={`p-${x}-${z}`} position={[x, 0, z]} material={woodMaterial} castShadow>
@@ -265,7 +286,14 @@ function ProceduralNiasHouse({ isShaking, simulationResult }: { isShaking?: bool
       </group>
 
       {/* Diwa (X-Pillars for stability) */}
-      <group ref={xPillarsRef} position={[0, -0.8, 0]}>
+      <group 
+        ref={xPillarsRef} 
+        position={[0, -0.8, 0]}
+        onClick={(e) => {
+          e.stopPropagation();
+          onPartClick?.('diwa');
+        }}
+      >
         <mesh rotation={[0, 0, Math.PI * 0.2]} material={woodMaterial} castShadow>
           <boxGeometry args={[0.08, 3.2, 0.08]} />
         </mesh>
@@ -275,7 +303,14 @@ function ProceduralNiasHouse({ isShaking, simulationResult }: { isShaking?: bool
       </group>
 
       {/* House Body */}
-      <group ref={bodyRef} position={[0, 0.8, 0]}>
+      <group 
+        ref={bodyRef} 
+        position={[0, 0.8, 0]}
+        onClick={(e) => {
+          e.stopPropagation();
+          onPartClick?.('paku');
+        }}
+      >
         <mesh material={darkWoodMaterial} castShadow receiveShadow>
           <boxGeometry args={[4.5, 1.2, 3]} />
         </mesh>
@@ -286,7 +321,14 @@ function ProceduralNiasHouse({ isShaking, simulationResult }: { isShaking?: bool
       </group>
 
       {/* Massive Roof Group */}
-      <group ref={roofRef} position={[0, 1.4, 0]}>
+      <group 
+        ref={roofRef} 
+        position={[0, 1.4, 0]}
+        onClick={(e) => {
+          e.stopPropagation();
+          onPartClick?.('paku');
+        }}
+      >
         <mesh position={[0, 1.9, 0]} material={roofMaterial} castShadow rotation={[0, Math.PI * 0.25, 0]}>
           <coneGeometry args={[4.2, 3.8, 4]} />
         </mesh>
@@ -314,7 +356,49 @@ function Loader() {
   );
 }
 
-function House3DViewer({ isShaking, simulationResult }: { isShaking?: boolean, simulationResult?: 'steady' | 'collapsed' | null }) {
+function OmoHadaModel({ onPartClick }: { onPartClick?: (part: 'ehomo' | 'diwa' | 'paku') => void }) {
+  const { scene } = useGLTF('/omo-hada.glb');
+  const clonedScene = React.useMemo(() => scene.clone(), [scene]);
+  
+  useEffect(() => {
+    clonedScene.traverse((child) => {
+      if (child instanceof THREE.Mesh) {
+        child.castShadow = true;
+        child.receiveShadow = true;
+        if (child.material) {
+          // Ensure textures/colors are bright
+          if ('emissive' in child.material) {
+             (child.material as THREE.MeshStandardMaterial).emissiveIntensity = 0.2;
+          }
+        }
+      }
+    });
+  }, [clonedScene]);
+
+  return (
+    <Center>
+      <primitive 
+        object={clonedScene} 
+        scale={4.0} // Robust scale for visibility
+        onClick={(e: any) => {
+          e.stopPropagation();
+          const parts: ('ehomo' | 'diwa' | 'paku')[] = ['ehomo', 'diwa', 'paku'];
+          const randomPart = parts[Math.floor(Math.random() * parts.length)];
+          onPartClick?.(randomPart);
+        }}
+      />
+    </Center>
+  );
+}
+
+useGLTF.preload('/omo-hada.glb');
+
+function House3DViewer({ isShaking, simulationResult, onPartClick, useModel = false }: { 
+  isShaking?: boolean, 
+  simulationResult?: 'steady' | 'collapsed' | null,
+  onPartClick?: (part: 'ehomo' | 'diwa' | 'paku') => void,
+  useModel?: boolean
+}) {
   return (
     <div className="w-full h-full bg-stone-100 rounded-3xl overflow-hidden relative shadow-inner">
       <div className="absolute top-4 left-4 z-30 flex items-center gap-2 bg-white/90 backdrop-blur-sm px-3 py-1.5 rounded-full border border-stone-200 text-stone-500 shadow-sm pointer-events-none">
@@ -328,29 +412,39 @@ function House3DViewer({ isShaking, simulationResult }: { isShaking?: boolean, s
         className="w-full h-full"
         gl={{ antialias: true }}
       >
-        <PerspectiveCamera makeDefault position={[10, 6, 12]} fov={35} />
+        <PerspectiveCamera makeDefault position={[0, 4, 12]} fov={35} />
         <OrbitControls 
-          enablePan={false} 
-          minDistance={8} 
-          maxDistance={25} 
+          enablePan={true} 
+          minDistance={3} 
+          maxDistance={20} 
           autoRotate={!isShaking && !simulationResult}
           autoRotateSpeed={0.5}
         />
         
-        {/* Environment & Lighting */}
+        {/* Enhanced Environment & Lighting for Student Clarity */}
+        <Environment preset="apartment" />
         <ambientLight intensity={1.5} />
         <directionalLight 
-          position={[10, 20, 10]} 
+          position={[15, 25, 15]} 
           intensity={2.5} 
           castShadow 
-          shadow-mapSize={[1024, 1024]}
+          shadow-mapSize={[2048, 2048]}
         />
-        <pointLight position={[-10, 5, -10]} intensity={1} color="#ffe0b2" />
-        <Stars radius={100} depth={50} count={5000} factor={4} saturation={0} fade speed={1} />
+        <pointLight position={[-15, 10, -15]} intensity={2} color="#ffffff" />
+        <spotLight position={[0, 20, 0]} intensity={3} angle={0.5} penumbra={1} castShadow />
+        <Stars radius={150} depth={60} count={1000} factor={4} saturation={0} fade speed={1} />
         
         <Suspense fallback={null}>
           <Float speed={1.5} rotationIntensity={0.2} floatIntensity={0.5}>
-            <ProceduralNiasHouse isShaking={isShaking} simulationResult={simulationResult} />
+            {useModel ? (
+              <OmoHadaModel onPartClick={onPartClick} />
+            ) : (
+              <ProceduralNiasHouse 
+                isShaking={isShaking} 
+                simulationResult={simulationResult} 
+                onPartClick={onPartClick}
+              />
+            )}
           </Float>
           <ContactShadows 
             position={[0, -2, 0]} 
@@ -666,7 +760,7 @@ function DashboardPage({ onSelect }: { onSelect: (p: Page) => void }) {
     },
     { 
       id: 'meaningful', 
-      title: 'Meaningful', 
+      title: 'Pemahaman Mendalam', 
       subtitle: 'Struktur', 
       icon: Lightbulb, 
       color: 'bg-nias-gold', 
@@ -697,8 +791,46 @@ function DashboardPage({ onSelect }: { onSelect: (p: Page) => void }) {
     <motion.div 
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
-      className="p-6 space-y-8 min-h-screen"
+      className="p-6 space-y-8 min-h-screen bg-cream-bg relative overflow-hidden"
     >
+      {/* Dynamic Nias Pattern Background */}
+      <div className="absolute inset-0 pointer-events-none -z-10 overflow-hidden">
+        {Array.from({ length: 6 }).map((_, i) => (
+          <motion.div
+            key={i}
+            initial={{ 
+              x: Math.random() * 100 - 50 + "%", 
+              y: Math.random() * 100 - 50 + "%",
+              rotate: Math.random() * 360,
+              opacity: 0.03
+            }}
+            animate={{ 
+              x: [
+                Math.random() * 100 - 50 + "%", 
+                "50%", 
+                Math.random() * 100 - 50 + "%"
+              ],
+              y: [
+                Math.random() * 100 - 50 + "%", 
+                "50%", 
+                Math.random() * 100 - 50 + "%"
+              ],
+              rotate: [0, 180, 360]
+            }}
+            transition={{ 
+              duration: 40 + Math.random() * 20, 
+              repeat: Infinity, 
+              ease: "linear" 
+            }}
+            className="absolute w-64 h-64 border-[1px] border-stone-400"
+            style={{ 
+              clipPath: 'polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%)',
+              borderWidth: i % 2 === 0 ? '1px' : '4px'
+            }}
+          />
+        ))}
+      </div>
+
       <header className="relative mt-4 space-y-1">
         <motion.div
           initial={{ scale: 0.9, opacity: 0 }}
@@ -706,7 +838,7 @@ function DashboardPage({ onSelect }: { onSelect: (p: Page) => void }) {
           transition={{ duration: 0.5 }}
           className="absolute -top-6 -left-6 w-32 h-32 bg-brick-red/5 rounded-full blur-3xl -z-10"
         />
-        <p className="text-[10px] font-black uppercase tracking-[0.3em] text-brick-red/60">Modul Pembelajaran</p>
+        <p className="text-[10px] font-black uppercase tracking-[0.3em] text-brick-red/60">Ayo Belajar</p>
         <h1 className="text-4xl font-black text-wood-dark tracking-tighter leading-none">
           Ya'ahowu, <br/>
           <span className="text-brick-red">Nono Niha!</span>
@@ -868,12 +1000,22 @@ function MeaningfulPage() {
     return 'ehomo';
   });
   const [activeTab, setActiveTab] = useState<'etno' | 'science'>('etno');
+  const [viewedParts, setViewedParts] = useState<Set<string>>(() => {
+    const saved = localStorage.getItem('nias_meaningful_viewed');
+    return saved ? new Set(JSON.parse(saved)) : new Set(['ehomo']);
+  });
 
   useEffect(() => {
     if (activeModal) {
-      localStorage.setItem('nias_meaningful_modal', activeModal);
+      setViewedParts(prev => {
+        const next = new Set([...prev, activeModal]);
+        localStorage.setItem('nias_meaningful_viewed', JSON.stringify([...next]));
+        return next;
+      });
     }
   }, [activeModal]);
+
+  const explorationMode = viewedParts.size >= 3;
 
   const playKnock = () => {
     try {
@@ -904,10 +1046,25 @@ function MeaningfulPage() {
           {/* Main 3D Viewer Area */}
           <div className="relative w-full aspect-[4/3] bg-stone-100 rounded-[40px] overflow-hidden border-2 border-white shadow-2xl group ring-1 ring-stone-200">
             <Suspense fallback={<Loader />}>
-              <House3DViewer />
+              <House3DViewer useModel={true} onPartClick={(part) => {
+                if (explorationMode) {
+                  playKnock();
+                  setActiveModal(part);
+                }
+              }} />
             </Suspense>
-            <div className="absolute top-4 left-1/2 -translate-x-1/2 bg-white/90 backdrop-blur-sm px-4 py-1.5 rounded-full border border-stone-200 text-[10px] font-black text-stone-500 uppercase tracking-widest pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity">
-              Slide putar • Zoom detail
+            
+            <div className={`absolute top-4 left-1/2 -translate-x-1/2 bg-white/90 backdrop-blur-sm px-4 py-1.5 rounded-full border border-stone-200 text-[10px] font-black uppercase tracking-widest transition-all duration-500 flex items-center gap-2 ${
+              explorationMode ? 'text-brick-red border-brick-red/30 shadow-lg scale-110' : 'text-stone-500 opacity-0 group-hover:opacity-100'
+            }`}>
+              {explorationMode ? (
+                <>
+                  <div className="w-1.5 h-1.5 bg-brick-red rounded-full animate-ping" />
+                  Mode Eksplorasi:Klik Bagian Rumah
+                </>
+              ) : (
+                'Slide putar • Zoom detail'
+              )}
             </div>
           </div>
 
@@ -950,7 +1107,7 @@ function MeaningfulPage() {
                     }`}
                   >
                     <BookOpen size={14} />
-                    Etnosains
+                    etno
                   </button>
                   <button 
                     onClick={() => setActiveTab('science')}
@@ -995,7 +1152,7 @@ function MeaningfulPage() {
                         <div className="flex items-center justify-between">
                           <div className="flex items-center gap-3">
                             <div className="w-1.5 h-6 bg-nias-gold rounded-full" />
-                            <h3 className="text-xl font-black text-stone-900 tracking-tight uppercase">Technical Deep Dive</h3>
+                            <h3 className="text-xl font-black text-stone-900 tracking-tight uppercase">Mari memahami</h3>
                           </div>
                           {activeModal === 'paku' && (
                             <div className="bg-stone-900 px-3 py-1.5 rounded-xl border border-stone-700">
@@ -1434,11 +1591,52 @@ function MitigasiPage() {
   const [activeItemId, setActiveItemId] = useState<string | null>(null);
   const [isFinished, setIsFinished] = useState(false);
   const [isBadgeClaimed, setIsBadgeClaimed] = useState(false);
+  const [showSuccessBadge, setShowSuccessBadge] = useState(false);
+
+  const badgeRef = useRef<HTMLDivElement>(null);
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
   );
+
+  const playDropSound = () => {
+    try {
+      const audio = new Audio('https://assets.mixkit.co/active_storage/sfx/600/600-preview.mp3');
+      audio.volume = 0.4;
+      audio.play().catch(() => {});
+    } catch (e) { console.warn(e); }
+  };
+
+  const playWinSound = () => {
+    try {
+      const audio = new Audio('https://assets.mixkit.co/active_storage/sfx/2019/2019-preview.mp3');
+      audio.volume = 0.5;
+      audio.play().catch(() => {});
+    } catch (e) { console.warn(e); }
+  };
+
+  const playFailSound = () => {
+    try {
+      const audio = new Audio('https://assets.mixkit.co/active_storage/sfx/2658/2658-preview.mp3');
+      audio.volume = 0.4;
+      audio.play().catch(() => {});
+    } catch (e) { console.warn(e); }
+  };
+
+  const downloadBadge = async () => {
+    if (badgeRef.current === null) return;
+    
+    try {
+      const dataUrl = await toPng(badgeRef.current, { cacheBust: true });
+      const link = document.createElement('a');
+      link.download = `Lencana-Mitigasi-Nias-${Date.now()}.png`;
+      link.href = dataUrl;
+      link.click();
+    } catch (err) {
+      console.error('oops, something went wrong!', err);
+    }
+  };
 
   const handleDragEnd = (event: any) => {
     const { active, over } = event;
@@ -1452,6 +1650,9 @@ function MitigasiPage() {
     // Find the item in pool
     const item = pool.find(i => i.id === itemId);
     if (!item) return;
+
+    // Unified Audio Feedback for action
+    playDropSound();
 
     if (overId === 'benar') {
       setBenar(prev => [...prev, item]);
@@ -1468,12 +1669,91 @@ function MitigasiPage() {
     setSalah([]);
     setShowFeedback(false);
     setIsFinished(false);
+    setShowSuccessBadge(false);
   };
 
   const activeItemData = initialItems.find(i => i.id === activeItemId);
 
   return (
-    <div className="p-6 space-y-6 bg-cream-bg min-h-[700px] flex flex-col items-center pb-40">
+    <div className="p-6 space-y-6 bg-cream-bg min-h-[700px] flex flex-col items-center pb-40 relative">
+      {/* Floating Success Badge & Confetti */}
+      <AnimatePresence>
+        {showSuccessBadge && (
+          <>
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 z-[90] pointer-events-none overflow-hidden bg-white/40 backdrop-blur-sm"
+            >
+              {Array.from({ length: 80 }).map((_, i) => (
+                <motion.div
+                  key={i}
+                  initial={{ 
+                    top: "50%", 
+                    left: "50%", 
+                    scale: 0,
+                    opacity: 1
+                  }}
+                  animate={{ 
+                    top: `${Math.random() * 100}%`,
+                    left: `${Math.random() * 100}%`,
+                    scale: Math.random() * 2 + 0.5,
+                    rotate: Math.random() * 720,
+                    opacity: [1, 1, 0]
+                  }}
+                  transition={{ 
+                    duration: 3.5, 
+                    ease: "circOut",
+                    delay: Math.random() * 0.3
+                  }}
+                  className="absolute w-4 h-4 rounded-full shadow-lg"
+                  style={{ 
+                    backgroundColor: ['#D4AF37', '#8B0000', '#F5F5DC', '#22C55E', '#3B82F6'][Math.floor(Math.random() * 5)] 
+                  }}
+                />
+              ))}
+            </motion.div>
+            <motion.div
+              initial={{ opacity: 0, scale: 0.3, y: 100, rotate: -10 }}
+              animate={{ opacity: 1, scale: 1, y: 0, rotate: 0 }}
+              exit={{ opacity: 0, scale: 1.2, y: -100 }}
+              className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-[100] pointer-events-none"
+            >
+              <div className="bg-white p-2 rounded-[48px] shadow-[0_32px_64px_-12px_rgba(0,0,0,0.3)]">
+                <div className="bg-nias-gold text-stone-900 px-10 py-10 rounded-[40px] flex flex-col items-center gap-4 border-4 border-white">
+                  <motion.div 
+                    animate={{ scale: [1, 1.2, 1], rotate: [0, 10, -10, 0] }}
+                    transition={{ repeat: Infinity, duration: 2 }}
+                    className="bg-white p-6 rounded-full shadow-2xl"
+                  >
+                    <Award size={80} className="text-stone-900 stroke-[2px]" aria-hidden="true" />
+                  </motion.div>
+                  <div className="text-center space-y-1">
+                    <motion.span 
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: 0.2 }}
+                      className="font-black text-4xl uppercase tracking-tighter italic block leading-none"
+                    >
+                      Hebat!
+                    </motion.span>
+                    <motion.p 
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      transition={{ delay: 0.4 }}
+                      className="font-bold text-sm uppercase tracking-[0.2em] opacity-80"
+                    >
+                      Misi Mitigasi Selesai
+                    </motion.p>
+                  </div>
+                </div>
+              </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
+      
       <div className="text-center space-y-2 w-full">
         <div className="flex justify-center gap-2 mb-2">
           <span className="px-3 py-1 bg-brick-red text-white text-[10px] font-black rounded-full uppercase tracking-tighter shadow-sm">Fase Mitigasi</span>
@@ -1560,7 +1840,14 @@ function MitigasiPage() {
           onClick={() => {
             setShowFeedback(true);
             const isAllCorrect = benar.every(i => i.isCorrect) && salah.every(i => !i.isCorrect) && benar.length + salah.length === initialItems.length;
-            if (isAllCorrect) setIsFinished(true);
+            if (isAllCorrect) {
+              setIsFinished(true);
+              setShowSuccessBadge(true);
+              playWinSound();
+              setTimeout(() => setShowSuccessBadge(false), 4000);
+            } else {
+              playFailSound();
+            }
           }}
           disabled={pool.length > 0 || showFeedback}
           className={`flex-[2] py-4 rounded-[24px] font-black text-xs shadow-xl transition-all flex items-center justify-center gap-2 active:scale-95 ${
@@ -1577,33 +1864,83 @@ function MitigasiPage() {
       <AnimatePresence>
         {isFinished && (
           <motion.div 
-            initial={{ scale: 0.8, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            className="w-full p-8 bg-nias-gold rounded-[40px] border-4 border-white text-center space-y-4 shadow-2xl shadow-nias-gold/30 mt-4"
+            initial={{ scale: 0.8, opacity: 0, y: 50 }}
+            animate={{ scale: 1, opacity: 1, y: 0 }}
+            className="w-full flex flex-col items-center gap-6 mt-4"
           >
-            <div className="w-20 h-20 bg-white rounded-full flex items-center justify-center mx-auto shadow-inner">
-              <ShieldAlert size={40} className="text-stone-900" />
-            </div>
-            <h3 className="text-2xl font-black text-stone-900 uppercase italic tracking-tighter">Ahli Mitigasi!</h3>
-            <p className="text-stone-900 font-bold text-xs leading-relaxed uppercase tracking-widest opacity-90">Kamu layak mendapatkan lencana kesiapsiagaan.</p>
-            <button 
-              onClick={() => setIsBadgeClaimed(true)}
-              disabled={isBadgeClaimed}
-              className={`w-full py-4 rounded-2xl font-black text-sm shadow-lg active:scale-95 transition-transform border-b-4 ${
-                isBadgeClaimed ? 'bg-green-600 text-white border-green-900' : 'bg-brick-red text-white border-red-900'
-              }`}
+            {/* The Badge to Capture */}
+            <div 
+              ref={badgeRef}
+              className="w-full bg-white rounded-[40px] p-10 border-[10px] border-nias-gold shadow-2xl space-y-6 relative overflow-hidden"
             >
-              {isBadgeClaimed ? 'LENCANA BERHASIL DIKLAIM! 🏅' : 'KLAIM LENCANA SAYA'}
-            </button>
-            {isBadgeClaimed && (
-              <motion.p 
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                className="text-stone-900 font-bold text-[10px] uppercase tracking-widest bg-white/40 p-2 rounded-xl"
+              {/* Nias Decoration Pattern inside badge */}
+              <div className="absolute inset-0 opacity-[0.05] pointer-events-none" 
+                   style={{ 
+                     backgroundImage: `url("data:image/svg+xml,%3Csvg width='30' height='30' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M30 0l30 30-30 30-30-30z' fill='%23000' fill-opacity='1' fill-rule='evenodd'/%3E%3C/svg%3E")`,
+                     backgroundSize: '20px 20px'
+                   }} 
+              />
+
+              <div className="relative z-10 flex flex-col items-center">
+                <div className="w-28 h-28 bg-gradient-to-br from-nias-gold to-yellow-600 rounded-full flex items-center justify-center mb-6 shadow-2xl relative">
+                  <div className="absolute inset-2 border-2 border-white/40 rounded-full" />
+                  <ShieldAlert size={56} className="text-stone-900 drop-shadow-lg" />
+                </div>
+                
+                <div className="space-y-1 text-center">
+                  <p className="text-stone-400 font-black text-[10px] uppercase tracking-[0.4em] mb-2">SERTIFIKAT DIGITAL</p>
+                  <h3 className="text-4xl font-black text-stone-900 uppercase italic tracking-tighter leading-none">Ahli Mitigasi!</h3>
+                  <div className="h-1 w-16 bg-brick-red mx-auto my-4 rounded-full" />
+                  <p className="text-stone-600 font-bold text-sm leading-relaxed px-4">Telah berhasil menyelesaikan simulasi aksi penyelamatan dini gempa bumi di Nias.</p>
+                </div>
+
+                <div className="mt-8 pt-6 border-t border-stone-100 w-full flex justify-between items-center opacity-60">
+                   <div className="flex flex-col items-start">
+                     <p className="text-[8px] font-black uppercase text-stone-400">Penerbit</p>
+                     <p className="text-[10px] font-bold text-stone-800 tracking-tighter">MODUL IPA UNIMED</p>
+                   </div>
+                   <div className="w-10 h-10">
+                     <img src="/Lambang_Universitas_Negeri_Medan.png" className="w-full h-full object-contain grayscale" alt="Logo" />
+                   </div>
+                </div>
+              </div>
+
+              {/* Holographic shine effect */}
+              <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-br from-white/10 via-transparent to-black/[0.02] pointer-events-none" />
+            </div>
+
+            <div className="flex flex-col w-full gap-3">
+              <button 
+                onClick={() => {
+                  downloadBadge();
+                  setIsBadgeClaimed(true);
+                }}
+                className={`w-full py-5 rounded-[28px] font-black text-xs shadow-xl active:scale-95 transition-all flex items-center justify-center gap-3 border-b-4 ${
+                  isBadgeClaimed 
+                    ? 'bg-nias-gold text-stone-900 border-yellow-700' 
+                    : 'bg-stone-900 text-white border-stone-700'
+                }`}
               >
-                Lencana disimpan di profil Anda.
-              </motion.p>
-            )}
+                {isBadgeClaimed ? (
+                  <>
+                    <CheckCircle2 size={18} />
+                    SIMPAN KE GALERI BERHASIL!
+                  </>
+                ) : (
+                  <>
+                    <Download size={18} />
+                    SIMPAN LENCANA KE GALERI
+                  </>
+                )}
+              </button>
+              
+              <button 
+                onClick={resetGame}
+                className="w-full py-4 text-stone-400 font-black text-[10px] uppercase tracking-[0.2em] hover:text-brick-red transition-colors"
+              >
+                Mulai Ulang Simulasi
+              </button>
+            </div>
           </motion.div>
         )}
       </AnimatePresence>
