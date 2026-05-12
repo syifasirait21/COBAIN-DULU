@@ -548,9 +548,23 @@ function House3DViewer({ isShaking, simulationResult, onPartClick, useModel = fa
 type Page = 'dashboard' | 'mindful' | 'meaningful' | 'joyful' | 'mitigasi';
 
 function SplashScreen({ onComplete }: { onComplete: () => void }) {
+  const [isLoading, setIsLoading] = useState(true);
+  const [loadingProgress, setLoadingProgress] = useState(0);
   const [step, setStep] = useState(0);
 
   useEffect(() => {
+    // Simulate initial loading
+    const timer = setInterval(() => {
+      setLoadingProgress(prev => {
+        if (prev >= 100) {
+          clearInterval(timer);
+          setTimeout(() => setIsLoading(false), 1500);
+          return 100;
+        }
+        return prev + 1;
+      });
+    }, 35);
+    
     // Preload intro images to ensure snappy transitions
     const imageUrls = [
       "/Splash1.png", 
@@ -561,6 +575,8 @@ function SplashScreen({ onComplete }: { onComplete: () => void }) {
       const img = new Image();
       img.src = url;
     });
+
+    return () => clearInterval(timer);
   }, []);
   
   const steps = [
@@ -598,7 +614,86 @@ function SplashScreen({ onComplete }: { onComplete: () => void }) {
            }} 
       />
 
-      {/* --- Persistent Background Elements --- */}
+      <AnimatePresence>
+        {isLoading ? (
+          <motion.div 
+            key="university-loading"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0, scale: 1.1, filter: "blur(10px)" }}
+            className="absolute inset-0 z-[200] bg-[#dfc9b0] flex flex-col items-center justify-center p-8 overflow-hidden"
+          >
+             {/* Background Pattern */}
+             <div className="absolute inset-0 opacity-[0.02] pointer-events-none" 
+                  style={{ 
+                    backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M30 0l30 30-30 30-30-30z' fill='%23000' fill-opacity='1' fill-rule='evenodd'/%3E%3C/svg%3E")`,
+                    backgroundSize: '30px 30px'
+                  }} 
+             />
+
+             {/* Moving Clouds in Background */}
+             <motion.div 
+               animate={{ x: [-10, 10] }}
+               transition={{ duration: 4, repeat: Infinity, repeatType: 'reverse', ease: "easeInOut" }}
+               className="absolute top-24 -right-10 opacity-30 z-0"
+             >
+               <svg width="140" height="80" viewBox="0 0 120 70" fill="white">
+                 <path d="M30 60c-12 0-22-8-22-20s10-20 22-20c4-8 12-12 20-12s16 4 20 12c8-4 20-4 28 8 8 12 4 32-16 32H30z" />
+               </svg>
+             </motion.div>
+             <motion.div 
+               animate={{ x: [10, -10] }}
+               transition={{ duration: 5, repeat: Infinity, repeatType: 'reverse', ease: "easeInOut" }}
+               className="absolute top-[40%] -left-12 opacity-20 z-0"
+             >
+               <svg width="120" height="70" viewBox="0 0 100 60" fill="white">
+                 <path d="M25 50c-10 0-18-6-18-16s8-16 18-16c3-6 10-10 16-10s13 4 16 10c6-3 16-3 22 6 6 9 3 26-12 26H25z" />
+               </svg>
+             </motion.div>
+
+             <motion.div
+               initial={{ y: 20, opacity: 0 }}
+               animate={{ y: 0, opacity: 1 }}
+               transition={{ delay: 0.2 }}
+               className="flex flex-col items-center space-y-8 z-10"
+             >
+                {/* University Logo */}
+                <div className="relative">
+                  <motion.div 
+                    animate={{ rotate: 360 }}
+                    transition={{ duration: 8, repeat: Infinity, ease: "linear" }}
+                    className="absolute -inset-4 border-2 border-dashed border-stone-200 rounded-full"
+                  />
+                  <div className="w-28 h-28 flex items-center justify-center relative z-10">
+                    <img 
+                      src="/Lambang_Universitas_Negeri_Medan.png" 
+                      alt="UNIMED" 
+                      className="w-full h-full object-contain"
+                    />
+                  </div>
+                </div>
+
+                {/* University Info */}
+                <div className="text-center space-y-2">
+                  <h2 className="text-xl font-black text-stone-900 uppercase tracking-tighter italic leading-none">ILMU PENGETAHUAN ALAM</h2>
+                  <div className="h-0.5 w-12 bg-stone-200 mx-auto" />
+                  <p className="text-xs font-bold text-stone-500 uppercase tracking-widest">UNIVERSITAS NEGERI MEDAN</p>
+                </div>
+
+                {/* Circular Loading Animation */}
+                <div className="pt-8">
+                  <motion.div
+                    className="w-10 h-10 border-4 border-stone-200 border-t-brick-red rounded-full shadow-sm"
+                    animate={{ rotate: 360 }}
+                    transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+                  />
+                </div>
+             </motion.div>
+          </motion.div>
+        ) : null}
+      </AnimatePresence>
+
+      {/* --- Persistent Background Elements (Intro) --- */}
       {/* Header Pill */}
       <motion.div 
         initial={{ y: -30, opacity: 0 }}
